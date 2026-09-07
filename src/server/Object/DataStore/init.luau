@@ -2,18 +2,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService('DataStoreService')
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
+local ServerStorage = game:GetService("ServerStorage")
 local LevelData = require(ReplicatedStorage.Datas.LevelData :: ModuleScript)
 local ItemData = require(ReplicatedStorage.Datas.ItemData :: ModuleScript)
-local PlayerData = DataStoreService:GetDataStore('PlayerData')
+local DataStoreModule = require(ServerStorage.DataStore :: ModuleScript)
 
 local self : any = {}
 
-local loaded = {}
-local collections = {}
-local dirty = {}
-local SAVE_INTERVAL, SAVE_MAX_RETRY, SAVE_RETRY_DELAY = 60, 5, 5
+local stores = {}
 local LEADERBOARD_UPDATE_INTERVAL = 60
-local UpdateKillLeaderstats, UpdateCashLeaderstats, UpdateBossKillLeaderstats, UpdateRobuxLeaderstats, InitTowerCollection, AsyncEvent, InitPlayerPath, ClearPlayerPath, Reconcile, SetOfflineReward, AsyncServerEvent, UpdatePlayerPasses, SavePlayer, StartAutoSave = nil
+local UpdateKillLeaderstats, UpdateCashLeaderstats, UpdateBossKillLeaderstats, UpdateRobuxLeaderstats, InitTowerCollection, AsyncEvent, InitPlayerPath, ClearPlayerPath, Reconcile, SetOfflineReward, AsyncServerEvent, UpdatePlayerPasses = nil
 
 function self.init()
     self.PlayerDataLoadedEvent = shared.Event.new()
@@ -46,20 +44,6 @@ function self.init()
             self[module.Name].Init(self.Module)
         end
     end
-
-    game:BindToClose(function()
-        local players = {}
-        for player in collections do
-            table.insert(players, player)
-        end
-        for _, player in ipairs(players) do
-            SavePlayer(player)
-        end
-        local deadline = os.clock() + 30
-        while next(loaded) ~= nil and os.clock() < deadline do
-            task.wait(0)
-        end
-    end)
 end
 function self.start()
     shared.Game.GameFarmEvent:Connect(function(_, player, reward)
@@ -86,35 +70,36 @@ function self.start()
     end
 	Players.PlayerAdded:Connect(self.PlayerEnter)
     UpdateKillLeaderstats(); UpdateCashLeaderstats(); UpdateBossKillLeaderstats(); UpdateRobuxLeaderstats()
-    StartAutoSave()
 end
 
 --- 	玩家进入
 function self.PlayerEnter(player)
-    if loaded[player] == true then return end
+    if stores[player] ~= nil then return end
 
-    local result, value = pcall(PlayerData.GetAsync, PlayerData, player.UserId)
-	if result == false then player:Kick('datastore fail to load'); return end 
+    local dataStore = DataStoreModule.new('PlayerData', tostring(player.UserId))
 
-	local foundData = value or {}
-	-- print('data loaded:', foundData)
-	local defaultData = Reconcile(foundData, shared.PlayerDatas)
+    local response, responseData = dataStore:Open(shared.PlayerDatas)
+    if response ~= 'Success' then
+        dataStore:Destroy()
+        player:Kick('datastore fail to load: ' .. tostring(response) .. ' ' .. tostring(responseData))
+        return
+    end
+
+    local defaultData = dataStore.Value
+    -- Reconcile(defaultData, shared.PlayerDatas)
     for _, totem in pairs(defaultData.Totem.Inv) do
         if totem.Point == nil then
             totem.Point = 1
         end
     end
 
-	loaded[player] = true
-	collections[player] = defaultData
-    
+    stores[player] = dataStore
+
     ServerEnterInit(player, defaultData)
     self.GridModule.GridInit(defaultData.Grid)
     InitPlayerPath(player, defaultData)
     InitTowerCollection(player, defaultData)
     AsyncEvent(defaultData)
-
-    -- print('data initiated:', defaultData)
 
     self.PlayerDataLoadedEvent:Fire(player, defaultData.Tower.Inv)
 	ReplicatedStorage.Remote.SetPlayerData:FireClient(player, defaultData)
@@ -122,86 +107,42 @@ function self.PlayerEnter(player)
 end
 --- 	玩家退出
 function self.PlayerExit(player)
-	if loaded[player] == nil then warn('player data not loaded'); return end
-	
+    local dataStore = stores[player]
+    if dataStore == nil then warn('player data not loaded'); return end
+
     self.PlayerExitEvent:Fire(player)
 
-	local data = self.GetData(player)
-	data.States.LastTime = os.time()
+    local data = dataStore.Value
+    data.States.LastTime = os.time()
     data.States.IsNew = false
     data.States.PlaceVersion = game.PlaceVersion
     data.States.OfflineReward = {Items = {}, Cash = 0}
-	
-    SavePlayer(player)
 
+    stores[player] = nil
+    dataStore:Close()
     ClearPlayerPath(player, data)
-	
-	loaded[player] = nil
-	collections[player] = nil
-	dirty[player] = nil
-end
-
-function SavePlayer(player)
-    local data = collections[player]
-    if data == nil then
-        dirty[player] = nil
-        return true
-    end
-
-    for attempt = 1, SAVE_MAX_RETRY do
-        local success, _ = pcall(PlayerData.SetAsync, PlayerData, player.UserId, data)
-        if success then
-            dirty[player] = nil
-            return true
-        end
-        if attempt < SAVE_MAX_RETRY then
-            task.wait(SAVE_RETRY_DELAY)
-        end
-    end
-
-    warn('player data save failed after retries:', player)
-    return false
-end
-
-function StartAutoSave()
-    task.spawn(function()
-        while true do
-            task.wait(SAVE_INTERVAL)
-            local players = {}
-            for player in dirty do
-                table.insert(players, player)
-            end
-            for _, player in ipairs(players) do
-                if collections[player] == nil then
-                    dirty[player] = nil
-                else
-                    SavePlayer(player)
-                    task.wait(1)
-                end
-            end
-        end
-    end)
 end
 
 function self.GetData(player)
-    if loaded[player] == nil then warn('data not loaded for player:', player); return nil end
+    local dataStore = stores[player]
+    if dataStore == nil then warn('data not loaded for player:', player); return nil end
 
-    return collections[player]
+    return dataStore.Value
 end
 function self.SetPlayerData(player, tag)
-    local tarData = collections[player]
-    if tarData == nil then warn('player data not found'); return end
-    dirty[player] = true
+    local dataStore = stores[player]
+    if dataStore == nil then warn('player data not found'); return end
+    local tarData = dataStore.Value
     if type(tag) == "string" then tag = {tag} end
     ReplicatedStorage.Remote.SetPlayerData:FireClient(player, tarData, tag)
 end
 
 ---------------- Path相关
 function self.GetPlayerCurPath(player)
-    local tarData = collections[player]
-    if tarData == nil then return nil end
+    local dataStore = stores[player]
+    if dataStore == nil then return nil end
 
-    local curPath = tarData.States.CurPath
+    local curPath = dataStore.Value.States.CurPath
     if curPath == nil then warn('curpath fetch error for plr:', player); return nil end
 
     return curPath
@@ -227,14 +168,15 @@ function ClearPlayerPath(plr, data)
         task.wait()
 	end
 
-    shared.Path.Paths[self.GetPlayerCurPath(plr)].Owner = nil
+    shared.Path.Paths[data.States.CurPath].Owner = nil
     shared.Area.ExitEvent:Fire(data.States.CurPath)
 end
 
 function self.PlayerConfirmGuide(player, step)
-    local tarData = collections[player]
-    if tarData == nil then warn('player data not found'); return end
+    local dataStore = stores[player]
+    if dataStore == nil then warn('player data not found'); return end
 
+    local tarData = dataStore.Value
     if tarData.Guide[step] == false then
         tarData.Guide[step] = true
     end
@@ -242,17 +184,18 @@ function self.PlayerConfirmGuide(player, step)
     self.SetPlayerData(player, 'Guide')
 end
 function AsyncServerEvent()
-    for plr, data in collections do
-        AsyncEvent(data)
+    for plr, dataStore in stores do
+        AsyncEvent(dataStore.Value)
         self.SetPlayerData(plr, 'Event')
     end
 end
 
 ---------------- Profile相关
 function self.PlayerUpdateMaxLevel(player, maxLevel)
-    local tarData = collections[player]
-    if tarData == nil then warn('player data not found'); return end
+    local dataStore = stores[player]
+    if dataStore == nil then warn('player data not found'); return end
 
+    local tarData = dataStore.Value
     if maxLevel > tarData.Profile.MaxLevel then
         tarData.Profile.MaxLevel = maxLevel
     end
@@ -260,9 +203,10 @@ function self.PlayerUpdateMaxLevel(player, maxLevel)
     self.SetPlayerData(player)
 end
 function self.PlayerUpdateMaxChallenge(player, maxChallenge)
-    local tarData = collections[player]
-    if tarData == nil then warn('player data not found'); return end
+    local dataStore = stores[player]
+    if dataStore == nil then warn('player data not found'); return end
 
+    local tarData = dataStore.Value
     if maxChallenge > tarData.Profile.MaxChallenge then
         tarData.Profile.MaxChallenge = maxChallenge
     end
@@ -272,10 +216,11 @@ end
 
 --- 	记录Robux花费
 function self.AddSpend(player, robux)
-    local tarData = collections[player]
-    if tarData == nil then warn('player data not found'); return end
+    local dataStore = stores[player]
+    if dataStore == nil then warn('player data not found'); return end
     if type(robux) ~= "number" or robux <= 0 then return end
 
+    local tarData = dataStore.Value
     tarData.Profile.Spend += robux
     self.SetPlayerData(player, 'Profile')
 end
@@ -284,8 +229,8 @@ function UpdateKillLeaderstats()
     local TopKillLeaderstats = DataStoreService:GetOrderedDataStore('TopKill' .. shared.Tool.GetWeekId())
     task.spawn(function()
         while true do
-            for plr, data in collections do
-                TopKillLeaderstats:SetAsync('Kill'..plr.UserId, math.ceil(data.Profile.Kills))
+            for plr, dataStore in stores do
+                TopKillLeaderstats:SetAsync('Kill'..plr.UserId, math.ceil(dataStore.Value.Profile.Kills))
                 task.wait(.1)
             end
             task.wait(LEADERBOARD_UPDATE_INTERVAL)
@@ -296,9 +241,9 @@ function UpdateCashLeaderstats()
     local TopKillLeaderstats = DataStoreService:GetOrderedDataStore('TopCash' .. shared.Tool.GetWeekId())
     task.spawn(function()
         while true do
-            for plr, data in collections do
+            for plr, dataStore in stores do
                 if plr.UserId == 1694842986 or plr.UserId == 3811927185 then continue end
-                TopKillLeaderstats:SetAsync('Cash'..plr.UserId, math.ceil(data.Coin.Cash))
+                TopKillLeaderstats:SetAsync('Cash'..plr.UserId, math.ceil(dataStore.Value.Coin.Cash))
                 task.wait(.1)
             end
             task.wait(LEADERBOARD_UPDATE_INTERVAL)
@@ -309,8 +254,8 @@ function UpdateBossKillLeaderstats()
     local TopKillLeaderstats = DataStoreService:GetOrderedDataStore('TopBossKill' .. shared.Tool.GetWeekId())
     task.spawn(function()
         while true do
-            for plr, data in collections do
-                TopKillLeaderstats:SetAsync('BossKill'..plr.UserId, math.ceil(data.Profile.BossKills))
+            for plr, dataStore in stores do
+                TopKillLeaderstats:SetAsync('BossKill'..plr.UserId, math.ceil(dataStore.Value.Profile.BossKills))
                 task.wait(.1)
             end
             task.wait(LEADERBOARD_UPDATE_INTERVAL)
@@ -321,8 +266,8 @@ function UpdateRobuxLeaderstats()
     local TopRobuxLeaderstats = DataStoreService:GetOrderedDataStore('TopSpend')
     task.spawn(function()
         while true do
-            for plr, data in collections do
-                TopRobuxLeaderstats:SetAsync('Spend'..plr.UserId, math.ceil(data.Profile.Spend))
+            for plr, dataStore in stores do
+                TopRobuxLeaderstats:SetAsync('Spend'..plr.UserId, math.ceil(dataStore.Value.Profile.Spend))
                 task.wait(.1)
             end
             task.wait(LEADERBOARD_UPDATE_INTERVAL)
@@ -349,8 +294,6 @@ function Reconcile(data, template)
     return data
 end
 function ServerEnterInit(player, data)
-    dirty[player] = true
-
     self.TowerController.RepairCloneEvolve(player)
 
     local lastTime = data.States.LastTime

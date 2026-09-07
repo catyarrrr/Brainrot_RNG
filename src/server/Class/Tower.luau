@@ -1,4 +1,3 @@
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
@@ -76,7 +75,6 @@ end
 function Class.new(player, towerUID, uid, name, cFrame, level, towerId, gridXY, shapeName , pathId, traitId)
 	-- local self = setmetatable(TowerDatas.GetData(tonumber(string.match(name, 'r(%d+)$')), level), Class)
 
-
 	local self = setmetatable(TowerData.GetCloneData(towerUID), Class)
 
 	if traitId then
@@ -89,6 +87,7 @@ function Class.new(player, towerUID, uid, name, cFrame, level, towerId, gridXY, 
 	local assetId = TowerData.GetAssetIdByTowerUID(towerUID)
 	local asset = AssetsData[assetId]
 	local model = towers:FindFirstChild(asset.Model):Clone()
+	model = Class.InitTowerModel(towerUID, model)
 	model:PivotTo(cFrame)
 	model.Parent = worldModel
 	model.Range.Size = Vector3.new(self.Range*2, model.Range.Size.Y, self.Range*2)
@@ -99,7 +98,6 @@ function Class.new(player, towerUID, uid, name, cFrame, level, towerId, gridXY, 
 	else
 		self.Id = towerId
 	end
-	
 	--print('generate tower with id:', self.Id)
 	
 	self.UID = uid
@@ -290,5 +288,25 @@ function Reset(_, player)
 	end
 end
 
+function Class.InitTowerModel(towerUID, model)
+	local staticData = TowerData.GetData(towerUID)
+	if staticData == nil then return end
+	
+	local outerModel = Instance.new('Model')
+	outerModel.Name = model.Name
+	outerModel.PrimaryPart = model.PrimaryPart
+	model.Parent = outerModel
+	local circle = ReplicatedStorage.Assets.Parts.TowerParts.Circle:Clone()
+	circle:PivotTo(model:GetPivot())
+	circle.Size = Vector3.new(staticData.Range, circle.Size.Y, staticData.Range)
+	circle.Parent = outerModel
+
+	local range = ReplicatedStorage.Assets.Parts.TowerParts.Range:Clone()
+	range:PivotTo(model:GetPivot())
+	range.Size = Vector3.new(staticData.Range, range.Size.Y, staticData.Range)
+	range.Parent = outerModel
+
+	return outerModel
+end
 
 return Class

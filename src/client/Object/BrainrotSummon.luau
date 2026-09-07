@@ -1,6 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local TotemUI = require(ReplicatedStorage.Client.Object.UIHandler.Menu.TotemUI)
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local TotemData = require(ReplicatedStorage.Datas.TotemData :: ModuleScript)
 
@@ -125,9 +124,15 @@ function self.Start(towerUID)
 
     self.Alien = ReplicatedStorage.Assets.Towers:FindFirstChild('Tower' ..  tostring(towerType)):Clone()
     self.Alien.PrimaryPart.Anchored = true
-    self.Alien.Circle:Destroy()
-    self.Alien.Range:Destroy()
-    self.Alien.SpawnArea:Destroy()
+
+    local model = Instance.new("Model")
+    model.Name = self.Alien.Name
+    model.PrimaryPart = self.Alien.PrimaryPart
+    self.Alien.Parent = model
+    self.Alien = model
+    -- self.Alien.Circle:Destroy()
+    -- self.Alien.Range:Destroy()
+    -- self.Alien.SpawnArea:Destroy()
     shared.VFXHandler.GenerateMutParticle(nil, towerUID, self.Alien)
     
     local primaryPart = self.Alien.PrimaryPart

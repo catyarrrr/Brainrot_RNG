@@ -148,8 +148,7 @@ function GenerateTowerVisual(tool, towerUID)
 
 	local assetId = TowerData.GetAssetIdByTowerUID(towerUID)
 	local model = ReplicatedStorage.Assets.Towers:FindFirstChild(AssetsData[assetId].Model)
-	local offset = model:GetPivot('CF') or CFrame.new(0, 0, 0)
-    local clone = model:FindFirstChildOfClass('Model'):Clone()
+    local clone = model:Clone()
 	local towerData = TowerData.GetData(towerUID)
 	
 	shared.VFXHandler.GenerateMutParticle(clone, TowerData.GetMutIdByTowerUID(towerUID))

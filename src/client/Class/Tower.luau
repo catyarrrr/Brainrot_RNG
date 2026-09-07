@@ -52,6 +52,7 @@ function New(towerUID, uid, name, cFrame, player, waypointIndices, level, towerI
 
 	local assetsData = AssetsData[self.AssetId]
 	local model = ReplicatedStorage.Assets.Towers:FindFirstChild(assetsData.Model):Clone()
+	model = shared.TowerHandler.InitTowerModel(towerUID, model)
 
 	Class.SpawnTowerEvent:Fire(player, towerUID, towerId, gridXY, shapeName, model, cFrame)
 	self.Destroyed = false
@@ -82,7 +83,6 @@ function New(towerUID, uid, name, cFrame, player, waypointIndices, level, towerI
 	self.Rig:PivotTo(self.Rig:GetPivot() * self.CFrameOffset)
 	self.Rig.PrimaryPart.Anchored = true
 	-- if TowerData.GetTowerTypeByTowerUID(self.TowerUID) == 32 then self.Rig:ScaleTo(SCALE_WAYBIG) end
-	self.Highlight = self.Rig.Highlight
 	if assetsData.IdleAnimation then
 		self.IdleAnimationTrack = shared.AnimationHandler.GetAnimationTrack(self.Rig, assetsData.IdleAnimation)
 		self.IdleAnimationTrack.Priority = Enum.AnimationPriority.Idle

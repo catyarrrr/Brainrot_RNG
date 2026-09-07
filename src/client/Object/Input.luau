@@ -31,17 +31,15 @@ local EnumState = {
 				-- print('ui')
 				-- print('seletedtower uid:', self.SelectedTower.UID)
 				shared.UIHandler.TriggerTowerDetailEvent:Fire(true, self.SelectedTower)
-				self.SelectedTower.Rig.Highlight.Enabled = true
+				shared.VFXHandler.SetTowerHighlight(self.SelectedTower.Rig)
 				self.SelectedTower.Model.Circle.Transparency = 0
 			end
 		end,
 
 		exit = function(self)
+			shared.VFXHandler.ClearTowerHighlight()
 			if self.SelectedTower ~= nil and self.SelectedTower.Destroyed == false then
-				if self.SelectedTower.Rig:FindFirstChild('Highlight') ~= nil then
-					self.SelectedTower.Rig.Highlight.Enabled = false
-					self.SelectedTower.Model.Circle.Transparency = 1
-				end
+				self.SelectedTower.Model.Circle.Transparency = 1
 			end
 		end,
 

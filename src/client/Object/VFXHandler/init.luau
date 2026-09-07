@@ -16,6 +16,9 @@ local upgradeTowerHighlight = Instance.new('Highlight')
 upgradeTowerHighlight.Enabled = false
 upgradeTowerHighlight.FillColor = Color3.fromRGB(8, 255, 29)
 upgradeTowerHighlight.Parent = visualFolder
+local towerHighlight = Instance.new('Highlight')
+towerHighlight.Enabled = false
+towerHighlight.Parent = visualFolder
 
 local SPEED_OFFSET, SPEED_SPIN, HIDDEN_CFRAME = 2, 45, CFrame.new(0, -500, 0)
 local GradientHorizontalMove, GradientVerticalMove, GradientSpin, InitTowerParticle, PlayTowerParticle, GenerateTowerGui, InitTowerSwitchVisual = nil
@@ -114,6 +117,18 @@ function self.DisableGuideArrow()
     end
 end
 
+function self.SetTowerHighlight(rig, fillColor, fillTransparency, outlineTransparency)
+	towerHighlight.Adornee = rig
+	towerHighlight.FillColor = fillColor or Color3.fromRGB(255, 255, 255)
+	towerHighlight.FillTransparency = fillTransparency or 0
+	towerHighlight.OutlineTransparency = outlineTransparency or 0
+	towerHighlight.Enabled = true
+end
+function self.ClearTowerHighlight()
+	towerHighlight.Enabled = false
+	towerHighlight.Adornee = nil
+end
+
 -- 鼠标指向显示幽灵塔
 function self.ShowTowerOnMouse(modelName, towerUID)
 	local targetTower = ReplicatedStorage.Assets.Towers:FindFirstChild(modelName)
@@ -121,6 +136,7 @@ function self.ShowTowerOnMouse(modelName, towerUID)
 
 	--- 初始化幽灵塔
 	visualTower = targetTower:Clone()
+	visualTower = shared.TowerHandler.InitTowerModel(towerUID, visualTower)
 	for _, v in visualTower:GetDescendants() do
 		if v:IsA('BasePart') then
 			v.CanCollide = false
@@ -134,11 +150,7 @@ function self.ShowTowerOnMouse(modelName, towerUID)
 	visualTower.Circle.Size = Vector3.new(data.Range*2, visualTower.Circle.Size.Y, data.Range*2)
 
 	visualTower.Parent = visualFolder
-	local highlight = visualTower:FindFirstChildWhichIsA('Model').Highlight
-	highlight.Enabled = true
-	highlight.FillTransparency = .5
-	highlight.OutlineTransparency =  .5
-	highlight.FillColor = Color3.fromRGB(206, 202, 202)
+	self.SetTowerHighlight(visualTower:FindFirstChildWhichIsA('Model'), Color3.fromRGB(206, 202, 202), .5, .5)
 	-- shared.VFXHandler.AttackRangeVisualEvent:Fire(visualTower.Circle, true)
 	---
 
@@ -215,6 +227,7 @@ end
 -- 消除幽灵塔
 function self.HideTowerOnMouse()
 	upgradeTowerHighlight.Enabled = false
+	self.ClearTowerHighlight()
 	visualTower:Destroy()
 	if self.VisualTowerConnection then
 		self.VisualTowerConnection:Disconnect()

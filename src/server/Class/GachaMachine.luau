@@ -238,7 +238,7 @@ end
 
 function InitTowerModel(assets, towerData)
     local model = ReplicatedStorage.Assets.Towers:FindFirstChild(assets.Model)
-    local clone = model:FindFirstChildOfClass('Model'):Clone()
+    local clone = model:Clone()
     local mutId = TowerData.GetMutIdByTowerUID(towerData.TowerUID)
 
     clone.PrimaryPart.Anchored = true

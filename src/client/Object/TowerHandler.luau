@@ -1,3 +1,4 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local rs = game:GetService('ReplicatedStorage')
 
 local VFXHandler = require(script.Parent.VFXHandler)
@@ -86,6 +87,27 @@ function self.UpgradeTower(towerId)
 	end
 	
 	return false
+end
+
+function self.InitTowerModel(towerUID, model)
+	local staticData = TowerData.GetData(towerUID)
+	if staticData == nil then return end
+	
+	local outerModel = Instance.new('Model')
+	outerModel.Name = model.Name
+	outerModel.PrimaryPart = model.PrimaryPart
+	model.Parent = outerModel
+	local circle = ReplicatedStorage.Assets.Parts.TowerParts.Circle:Clone()
+	circle:PivotTo(model:GetPivot())
+	circle.Size = Vector3.new(staticData.Range, circle.Size.Y, staticData.Range)
+	circle.Parent = outerModel
+
+	local range = ReplicatedStorage.Assets.Parts.TowerParts.Range:Clone()
+	range:PivotTo(model:GetPivot())
+	range.Size = Vector3.new(staticData.Range, range.Size.Y, staticData.Range)
+	range.Parent = outerModel
+
+	return outerModel
 end
 
 return self
