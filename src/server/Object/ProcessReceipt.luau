@@ -42,18 +42,19 @@ function self.init()
 
 	ProductHandlers = {
 	---------------- cash购买
-		[shared.ProductDatas['5000xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 5000); return true end,
-		[shared.ProductDatas['20000xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 20000); return true end,
-		[shared.ProductDatas['60000xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 60000); return true end,
-		[shared.ProductDatas['175000xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 175000); return true end,
+		[shared.ProductDatas['29999xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 29999); return true end,
+		[shared.ProductDatas['89999xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 89999); return true end,
+		[shared.ProductDatas['229999xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 229999); return true end,
+		[shared.ProductDatas['599999xCash']] = function(player) shared.DataStore.CoinController.BuyCash(player, 599999); return true end,
 
 		---------------- Bundle购买
-		[shared.ProductDatas['RanAlien']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 0); return true end,
+		[shared.ProductDatas['RanBrainrot']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 0); return true end,
 		[shared.ProductDatas['LegendaryBundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 1); return true end,
 		[shared.ProductDatas['MythicBundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 2); return true end,
 		[shared.ProductDatas['SecretBundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 3); return true end,
 		[shared.ProductDatas['GodBundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 4); return true end,
 		[shared.ProductDatas['DivineBundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 5); return true end,
+		[shared.ProductDatas['LimitedBundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 6); return true end,
 		
 		[shared.ProductDatas['Mut1Bundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 13); return true end,
 		[shared.ProductDatas['Mut2Bundle']] = function(player) shared.DataStore.TowerController.BuyBundle(player, 12); return true end,
@@ -140,22 +141,13 @@ function self.init()
 		[shared.ProductDatas['x3BossChallenge']] = function(player) shared.DataStore.GachaController.BuyChallenge(player, 3); return true end,
 
 		---------------- alien保留
+		[shared.ProductDatas.KeepAlienEpic] = KeepAlienHandler,
 		[shared.ProductDatas.KeepAlienLegendary] = KeepAlienHandler,
 		[shared.ProductDatas.KeepAlienMythic] = KeepAlienHandler,
 		[shared.ProductDatas.KeepAlienSecret] = KeepAlienHandler,
 		[shared.ProductDatas.KeepAlienGod] = KeepAlienHandler,
 		[shared.ProductDatas.KeepAlienDivine] = KeepAlienHandler,
 		[shared.ProductDatas.KeepAlienLimited] = KeepAlienHandler,
-
-		---------------- 周末特卖
-		[shared.ProductDatas['49xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {130601}) end,
-		[shared.ProductDatas['149xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {120601}) end,
-		[shared.ProductDatas['399xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {420501, 420601}) end,
-		[shared.ProductDatas['699xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {40501, 40601}) end,
-		[shared.ProductDatas['1299xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {410401, 410501, 410601}) end,
-		[shared.ProductDatas['2499xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {480401, 480501, 480601}) end,
-		[shared.ProductDatas['4999xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {530401, 530501, 530601}) end,
-		[shared.ProductDatas['6999xExclusiveMutations']] = function(player) return BuyExclusiveAlien(player, {590401, 590501, 590601}) end,
 
 		---------------- totem许愿购买
 		[shared.ProductDatas['PrayTotem']] = function(player) 

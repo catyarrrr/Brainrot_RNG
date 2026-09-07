@@ -6,7 +6,7 @@ local module = {}
 function module.Init()
     -- PlaneParticleInit(1)
 	module.ParticleInit('EnemyDeadParticle')
-	module.ParticleInit('UpgradeEffect')
+	module.ParticleInit('UpgradeEffect', 5)
 end
 
 function module.Play(name, pos, time, orientation)

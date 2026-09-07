@@ -89,14 +89,13 @@ local PlayVisual = function(tower, enemy)
 	end
 	if att == nil then warn('attack pos not found for tower:', tower.TowerUID); return end
 
-
 	local towerType = TowerData.GetTowerTypeByTowerUID(tower.TowerUID)
 	if tower.Visual == 1 then
-		local projectileName = 'Tower' .. tostring(towerType) .. 'Projectile'
+		local projectileName = 'BR' .. tostring(towerType) .. 'Projectile'
 		shared.Projectile.FireEvent:Fire(projectileName, att.WorldCFrame.Position, enemy.Model.Torso, PROJECTILE_TICKS)
 	
 	elseif tower.Visual == 2 then
-		local projectileName = 'Tower' .. tostring(towerType) .. 'Projectile'
+		local projectileName = 'BR' .. tostring(towerType) .. 'Projectile'
 		local part = shared.ObjectPool.Get(projectileName)
 		if part == nil then return end
 		part:PivotTo(CFrame.lookAt(att.WorldCFrame.Position, enemy.Model.Torso.Position))
@@ -105,7 +104,7 @@ local PlayVisual = function(tower, enemy)
 			shared.ObjectPool.Return(projectileName, part) 
 		end)
 	elseif tower.Visual == 3 then
-		local projectileName = 'Tower' .. tostring(towerType) .. 'Beam'
+		local projectileName = 'BR' .. tostring(towerType) .. 'Beam'
 		shared.Projectile.BeamFireEvent:Fire(projectileName, att.WorldCFrame.Position, enemy.Model.Torso, PROJECTILE_TICKS)
 	end
 		

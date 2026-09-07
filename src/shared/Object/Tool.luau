@@ -47,6 +47,11 @@ function self.FormatNumber(num)
 	return formatted .. suffixes[index]
 end
 
+function self.FormatTowerType(towerType)
+	local str = string.format("%03d", towerType)
+	return str
+end
+
 function self.GetWeekId()
     local id = math.floor(os.time() / (7 * 24 * 60 * 60))
 	

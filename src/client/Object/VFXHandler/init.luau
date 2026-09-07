@@ -21,6 +21,9 @@ towerHighlight.Enabled = false
 towerHighlight.Parent = visualFolder
 
 local SPEED_OFFSET, SPEED_SPIN, HIDDEN_CFRAME = 2, 45, CFrame.new(0, -500, 0)
+local gachaTowers, gachaPartsCache = {}, {}
+local gachaTowerSlot = {}
+local gachaPositioned = false
 local GradientHorizontalMove, GradientVerticalMove, GradientSpin, InitTowerParticle, PlayTowerParticle, GenerateTowerGui, InitTowerSwitchVisual = nil
 local self : any = {ParticleModule = nil, GuideArrow = nil, RayCastHit = nil, Ray = nil, CurGrid = {},}
 local rng = Random.new()
@@ -120,7 +123,7 @@ end
 function self.SetTowerHighlight(rig, fillColor, fillTransparency, outlineTransparency)
 	towerHighlight.Adornee = rig
 	towerHighlight.FillColor = fillColor or Color3.fromRGB(255, 255, 255)
-	towerHighlight.FillTransparency = fillTransparency or 0
+	towerHighlight.FillTransparency = fillTransparency or 0.6
 	towerHighlight.OutlineTransparency = outlineTransparency or 0
 	towerHighlight.Enabled = true
 end
@@ -286,56 +289,69 @@ function self.GenerateMutParticle(_, towerUID, model)
         particle.Parent = model
     end
 end
+
 -- 抽塔模型
+
 function RollTower(isVIP)
-	local duration = 3
-	if isVIP then duration = 1 end
-	local positions = {}
-	for k, v in shared.GridHandler.GachaMachine.SpawnPos:GetChildren() do
-		table.insert(positions, v.WorldCFrame)
-	end
-
-	local towers = {}
-	local function RandomTower(index)
-		if towers[index] then
-			shared.ObjectPool.Return('GachaTower', towers[index])
+	local function GetTowerParts(model)
+		local parts = gachaPartsCache[model]
+		if not parts then
+			parts = {}
+			for _, v in model:GetDescendants() do
+				if v:IsA('BasePart') and v ~= model.PrimaryPart then
+					table.insert(parts, v)
+				end
+			end
+			gachaPartsCache[model] = parts
 		end
+		return parts
+	end
+	local function SetTowerVisible(model, visible)
+		local transparency = visible and 0 or 1
+		for _, part in GetTowerParts(model) do
+			part.Transparency = transparency
+		end
+	end
+	local duration = isVIP and 1 or 3
 
-		local tower = shared.ObjectPool.Get('GachaTower')
-		tower:PivotTo(positions[index] + Vector3.new(0, 4, 0))
-
-		towers[index] = tower
+	if #gachaTowers == 0 then
+		InitTowerSwitchVisual()
 	end
 
-	-- 初始化
-	for i = 1, 3 do
-		RandomTower(i)
+	while not gachaPositioned do
+		task.wait(0.1)
+	end
+
+	local bySlot = {}
+	for i, model in ipairs(gachaTowers) do
+		local slot = gachaTowerSlot[i]
+		bySlot[slot] = bySlot[slot] or {}
+		table.insert(bySlot[slot], model)
+	end
+
+	local shown = {}
+	for slot, list in bySlot do
+		shown[slot] = 1
+		SetTowerVisible(list[1], true)
 	end
 
 	local startTime = os.clock()
+	while os.clock() - startTime < duration do
+		local alpha = (os.clock() - startTime) / duration
+		task.wait(0.08 + 0.22 * alpha * alpha)
 
-	while true do
-		local elapsed = os.clock() - startTime
-		if elapsed >= duration then
-			break
-		end
-
-		local alpha = elapsed / duration
-		local interval = 0.04 + (0.20 - 0.04) * alpha * alpha
-
-		task.wait(interval)
-
-		for i = 1, 3 do
-			RandomTower(i)
+		for slot, list in bySlot do
+			local next = shown[slot] % #list + 1
+			SetTowerVisible(list[shown[slot]], false)
+			SetTowerVisible(list[next], true)
+			shown[slot] = next
 		end
 	end
 
-	for _, tower in towers do
-		shared.ObjectPool.Return('GachaTower', tower)
+	for slot, list in bySlot do
+		SetTowerVisible(list[shown[slot]], false)
 	end
 end
-
-
 --
 
 --	UI视觉效果 
@@ -528,10 +544,9 @@ function InitTowerParticle()
 	for _, tower in playerInv do
 		if tower.GridXY ~= nil then
 			local towerType = TowerData.GetTowerTypeByTowerUID(tower.TowerUID)
-			local name = 'Tower' .. tostring(towerType) .. 'Particle'
+			local name = 'BR' .. tostring(towerType) .. 'Particle'
 			self.ParticleModule.ParticleInit(name, nil, 'TowerParticle')
 		end
-		
 	end
 end
 function InitEnemyLoot()
@@ -543,16 +558,59 @@ end
 function InitTowerSwitchVisual()
     local towerFolder = ReplicatedStorage.Assets.Parts.GachaTower
 
-	local first = true
-    for _, part in towerFolder:GetChildren() do
-		
-		if first then
-			shared.ObjectPool.Create('GachaTower', part, 1)
-			first = false
-		else
-			shared.ObjectPool.Insert('GachaTower', part)
+	gachaTowers = {}
+	gachaPartsCache = {}
+	gachaTowerSlot = {}
+	gachaPositioned = false
+
+    for _, template in towerFolder:GetChildren() do
+		local model = template:Clone()
+		for _, v in model:GetDescendants() do
+			if v:IsA('BasePart') then
+				v.Anchored = true
+				v.CanCollide = false
+				v.CanQuery = false
+			end
 		end
+		if workspace.StreamingEnabled then
+			model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+		end
+		for _, v in model:GetDescendants() do
+			if v:IsA('BasePart') then
+				v.Transparency = 1
+			end
+		end
+		model.Parent = workspace
+		table.insert(gachaTowers, model)
     end
+
+
+	task.spawn(function()
+		local machine
+		while true do
+			machine = shared.GridHandler and shared.GridHandler.GachaMachine
+			if machine and machine.SpawnPos and #machine.SpawnPos:GetChildren() >= 3 then
+				break
+			end
+			task.wait(0.1)
+		end
+
+		local slots = {}
+		for _, v in machine.SpawnPos:GetChildren() do
+			table.insert(slots, v.WorldCFrame)
+		end
+
+		local slotIndex = 0
+		for i, model in ipairs(gachaTowers) do
+			if #slots > 0 then
+				slotIndex = slotIndex % #slots + 1
+				model:PivotTo(slots[slotIndex])
+			end
+			gachaTowerSlot[i] = slotIndex
+		end
+
+		gachaPositioned = true
+	end)
 end
 
 --------------------------------------------	射线
@@ -653,30 +711,6 @@ function self.HideMergeBeam()
 			end
 		end
 		self.MergeBeamAttachments = nil
-	end
-end
-function self.CreateBossBeam(bossPart)
-	local attachment1 = Instance.new('Attachment')
-	attachment1.Name = 'BossBeam_1'
-	attachment1.Parent = bossPart
-
-	local template = ReplicatedStorage.Assets.Beams:FindFirstChild('BossBeam')
-	local myTowers = shared.Tower.GetMyTowers()
-	for _, tower in myTowers do
-		local clone = template:Clone()
-		local att
-		for _, v in tower.Rig:GetDescendants() do
-			if v.Name == 'AttachmentMid' then att = v; break end
-		end
-		if att == nil then continue end
-		for _, beam in clone:GetDescendants() do
-			if beam:IsA('Beam') then
-				beam.Attachment1 = attachment1
-				beam.Attachment0 = att
-			end
-		end
-
-		clone.Parent = bossPart
 	end
 end
 

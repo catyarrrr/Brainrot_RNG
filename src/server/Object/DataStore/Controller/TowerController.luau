@@ -240,7 +240,7 @@ function self.BuyStarterPack(player)
     tarData.Coin.Cash += 25000
     tarData.VIP.StarterPack = true
     local newUID = HttpService:GenerateGUID(false)
-    local towerUID = 120001 + SummonData.GetMutationValue()
+    local towerUID = 10001 + math.random(1, 6) * 100
     self.TowerModule.AddTower(tarData.Tower, towerUID, newUID)
 
     shared.BackpackHandler.AddPlayerBackpackTool(player, newUID)

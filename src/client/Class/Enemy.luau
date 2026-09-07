@@ -78,7 +78,6 @@ function Class.new(round, type, assetId, pathId, health, reward)
 
 	if type == 'Rush' and shared.UIHandler and shared.UIHandler.TopUI then
 		shared.UIHandler.NewBossBarEvent:Fire(self.Health, self.MaxHealth)
-		-- shared.VFXHandler.CreateBossBeam(self.Model.Torso)
 	end
 
 	enemies[index] = self

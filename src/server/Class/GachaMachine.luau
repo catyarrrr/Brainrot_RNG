@@ -150,7 +150,7 @@ function Class:Gacha(player)
             model:PivotTo(self.SpawnPos[index] * offset)
         else
             model:PivotTo((self.SpawnPos[index] + Vector3.new(0, -20, 0)))
-            task.delay(3.1, function() model:PivotTo(self.SpawnPos[index]* offset) end)
+            task.delay(3.2, function() model:PivotTo(self.SpawnPos[index]* offset) end)
         end
         table.insert(self.Towers, model)
         local buyPrompt = Instance.new('ProximityPrompt')

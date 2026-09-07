@@ -32,12 +32,12 @@ function self.start()
         if not self.SellDialog then return end
 
         if isEstimate then
-            self.SellDialog:hideGui("This Alien is worth " .. tostring(gems) .. ' Gems', true)
+            self.SellDialog:hideGui("This Brainrot is worth " .. tostring(gems) .. ' Gems', true)
             task.wait(1)
             local text = string.format('Its Cash value ranges from $%s to $%s.', shared.Tool.FormatNumber(cashMin), shared.Tool.FormatNumber(cashMax))
             self.SellDialog:hideGui(text)
         else
-            self.SellDialog:hideGui('No Alien, no appraisal.')
+            self.SellDialog:hideGui('No Brainrot, no appraisal.')
         end
     end)
     ReplicatedStorage.Remote.Tower.Combine.OnClientEvent:Connect(function(isCombine, text)
@@ -57,11 +57,11 @@ function InitSellNPC()
     task.spawn(function()
         local DialogModule = GetDialogModule()
 
-        local npc = workspace.NPCs.ElonMusk
+        local npc = workspace.NPCs:WaitForChild("Merchant")
         local prompt = npc:WaitForChild("ProximityPrompt")
     
         self.SellDialog = DialogModule.new("Sell NPC", npc, prompt)
-        self.SellDialog:addDialog("You want Cash? I want Aliens. Sounds like a deal.", {"I want to sell my inventory", "I want to sell this", "How do you price them?", "How much is this Alien worth?", "Never mind"})
+        self.SellDialog:addDialog("You want Cash? I want Brainrots. Sounds like a deal.", {"I want to sell my inventory", "I want to sell this", "How do you price them?", "How much is this Brainrot worth?", "Never mind"})
         self.SellDialog:addDialog("Are u sure?", {"Yep", "Nope"})
     
         --
@@ -105,12 +105,12 @@ function InitEvoNPC()
     task.spawn(function()
         local DialogModule = GetDialogModule()
 
-        local npc = workspace.NPCs.TianXiaoBan
+        local npc = workspace.NPCs:WaitForChild("BR002")
         local prompt = npc:WaitForChild("ProximityPrompt")
     
         self.EvoDialog = DialogModule.new("Evolve NPC", npc, prompt)
-        self.EvoDialog:addDialog("Hey ! What do you wanna do ?", {"I want to power up my aliens", "I want to mutate my aliens", "How can i get Gems","Never mind"})
-        self.EvoDialog:addDialog("Put 5 aliens with same mutation in your inventory first!", {"I'm ready !", "Not yet"})
+        self.EvoDialog:addDialog("Hey ! What do you wanna do ?", {"I want to power up my Brainrots", "I want to mutate my Brainrots", "How can i get Gems","Never mind"})
+        self.EvoDialog:addDialog("Put 5 Brainrots with same mutation in your inventory first!", {"I'm ready !", "Not yet"})
     
         prompt.Triggered:Connect(function(player)
             self.EvoDialog:triggerDialog(player, 1)
@@ -124,7 +124,7 @@ function InitEvoNPC()
                 elseif responseNum == 2 then
                     self.EvoDialog:triggerDialog(player, 2)
                 elseif responseNum == 3 then
-                    self.EvoDialog:hideGui('You can get more by selling aliens')
+                    self.EvoDialog:hideGui('You can get more by selling Brainrots')
                 elseif responseNum == 4 then
                     local farewells = { 'Sure !', 'See ya !', 'Later !' }
                     self.EvoDialog:hideGui(farewells[rng:NextInteger(1, #farewells)])
@@ -139,7 +139,7 @@ function InitFuseNPC()
     task.spawn(function()
         local DialogModule = GetDialogModule()
 
-        local npc = workspace.NPCs.TianXiaoWen
+        local npc = workspace.NPCs:WaitForChild("BR003")
         local prompt = npc:WaitForChild("ProximityPrompt")
     
         self.FuseDialog = DialogModule.new("Fuse NPC", npc, prompt)

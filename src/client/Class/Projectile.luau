@@ -139,7 +139,7 @@ function InitProjectile()
 
 			local towerType = TowerData.GetTowerTypeByTowerUID(tower.TowerUID)
 			if tower.Visual == 1 or tower.Visual == 2 then
-				local name = 'Tower' .. tostring(towerType) .. 'Projectile'
+				local name = 'BR' .. tostring(towerType) .. 'Projectile'
 			
 				local template = ReplicatedStorage.Assets.Projectiles:FindFirstChild(name)
 				if template == nil then continue end
@@ -148,7 +148,7 @@ function InitProjectile()
 				shared.ObjectPool.Create(name, template, nil, 'TowerProjectile')
 
 			elseif tower.Visual == 3 then
-				local name = 'Tower' .. tostring(towerType) .. 'Beam'
+				local name = 'BR' .. tostring(towerType) .. 'Beam'
 				
 				local template = ReplicatedStorage.Assets.Beams:FindFirstChild(name)
 				if template == nil then continue end

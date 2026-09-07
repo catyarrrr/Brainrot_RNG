@@ -1,7 +1,5 @@
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SummonData = require(ReplicatedStorage.Datas.SummonData :: ModuleScript)
-local RewardData = require(ReplicatedStorage.Shared.Data.RewardData)
 
 local self = {}
 local LoginRewardConfig = {

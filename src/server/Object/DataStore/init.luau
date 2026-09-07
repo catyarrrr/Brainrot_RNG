@@ -242,7 +242,7 @@ function UpdateCashLeaderstats()
     task.spawn(function()
         while true do
             for plr, dataStore in stores do
-                if plr.UserId == 1694842986 or plr.UserId == 3811927185 then continue end
+                if plr.UserId == 1694842986 then continue end
                 TopKillLeaderstats:SetAsync('Cash'..plr.UserId, math.ceil(dataStore.Value.Coin.Cash))
                 task.wait(.1)
             end

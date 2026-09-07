@@ -121,8 +121,9 @@ end
 function self.Start(towerUID)
     -- print(towerUID)
     local towerType = TowerData.GetTowerTypeByTowerUID(towerUID)
+    towerType = shared.Tool.FormatTowerType(towerType)
 
-    self.Alien = ReplicatedStorage.Assets.Towers:FindFirstChild('Tower' ..  tostring(towerType)):Clone()
+    self.Alien = ReplicatedStorage.Assets.Towers:FindFirstChild('BR' ..  tostring(towerType)):Clone()
     self.Alien.PrimaryPart.Anchored = true
 
     local model = Instance.new("Model")

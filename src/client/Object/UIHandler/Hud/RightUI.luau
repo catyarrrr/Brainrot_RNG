@@ -10,7 +10,7 @@ end
 
 function self.Update(playerData)
 	self.RightFrame.RandomHero.Btn.MouseButton1Click:Connect(function()
-		shared.BuyHandler.BuyProduct(shared.ProductDatas.RanAlien)
+		shared.BuyHandler.BuyProduct(shared.ProductDatas.RanBrainrot)
 	end)
 	self.RightFrame.StarterPack.Btn.MouseButton1Click:Connect(function()
 		shared.BuyHandler.BuyPass(shared.ProductDatas.PASSID_StarterPack)
