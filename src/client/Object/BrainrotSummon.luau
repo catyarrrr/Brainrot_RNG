@@ -124,6 +124,7 @@ function self.Start(towerUID)
     towerType = shared.Tool.FormatTowerType(towerType)
 
     self.Alien = ReplicatedStorage.Assets.Towers:FindFirstChild('BR' ..  tostring(towerType)):Clone()
+    self.Alien.PrimaryPart.CanCollide = false
     self.Alien.PrimaryPart.Anchored = true
 
     local model = Instance.new("Model")
@@ -131,9 +132,6 @@ function self.Start(towerUID)
     model.PrimaryPart = self.Alien.PrimaryPart
     self.Alien.Parent = model
     self.Alien = model
-    -- self.Alien.Circle:Destroy()
-    -- self.Alien.Range:Destroy()
-    -- self.Alien.SpawnArea:Destroy()
     shared.VFXHandler.GenerateMutParticle(nil, towerUID, self.Alien)
     
     local primaryPart = self.Alien.PrimaryPart

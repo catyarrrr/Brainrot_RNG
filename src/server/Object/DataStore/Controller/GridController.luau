@@ -36,7 +36,7 @@ function self.UpgradeGrid(player)
     for _, tower in tarData.Tower.Inv do
         if tower.GridXY then
             local towerStaticData = TowerData.GetData(tower.TowerUID)
-            self.GridModule.Place(tarData.Grid, shared.ShapeData[towerStaticData.Shape], tower.GridXY[1], tower.GridXY[2], tower.UID)
+            self.GridModule.Place(tarData.Grid, shared.ShapeData[towerStaticData.Shape].Cells, tower.GridXY[1], tower.GridXY[2], tower.UID)
         end
     end
 
@@ -57,7 +57,7 @@ function self.BuyGridUpgrade(player)
     for _, tower in tarData.Tower.Inv do
         if tower.GridXY then
             local towerStaticData = TowerData.GetData(tower.TowerUID)
-            self.GridModule.Place(tarData.Grid, shared.ShapeData[towerStaticData.Shape], tower.GridXY[1], tower.GridXY[2], tower.UID)
+            self.GridModule.Place(tarData.Grid, shared.ShapeData[towerStaticData.Shape].Cells, tower.GridXY[1], tower.GridXY[2], tower.UID)
         end
     end
 

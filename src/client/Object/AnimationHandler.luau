@@ -21,7 +21,11 @@ function self.GetAnimationTrack(model: Model, animatonId)
 	if not targetAnimation then print('animation not found'); return end 
 	
 	
-	local animator: Animator = animationController.Animator
+	local animator = animationController:FindFirstChild('Animator')
+	if animator == nil then 
+		animator = Instance.new('Animator')
+		animator.Parent = animationController
+	end
 	local animationTrack : AnimationTrack = animator:LoadAnimation(targetAnimation)
 	
 	return animationTrack

@@ -4,12 +4,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local self = {}
 local LoginRewardConfig = {
     {Cash = 10680},
-    {Tower = 440501},
-    {Items = {[101] = 8}},
-    {Items = {[111] = 13, [112] = 16}},
+    {Tower = 1070401},
+    {Items = {[101] = 18}},
+    {Items = {[111] = 16, [112] = 16}},
     {Cash = 15680000},
-    {Items = {[113] = 16, [114] = 18}},
-    {Tower = 240601},
+    {Items = {[113] = 18, [114] = 18}},
+    {Tower = 1220601},
 }
 
 function self.Init(context)
@@ -97,7 +97,7 @@ function self.ClaimFreeReward(player)
     if not tarData then return end
 
     local newUID = HttpService:GenerateGUID(false)
-    local towerUID = 130101
+    local towerUID = 1120201
     self.TowerModule.AddTower(tarData.Tower, towerUID, newUID)
     tarData.Coin.Cash += 10000
     tarData.States.GroupReward = true

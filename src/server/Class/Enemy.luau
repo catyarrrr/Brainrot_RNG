@@ -4,7 +4,7 @@ local ItemData = require(ReplicatedStorage.Datas.ItemData :: ModuleScript)
 local Class = {}
 Class.__index = Class
 
-local SPEED, SPEED_BOSS, SPEED_RUSH = 10, 3, 1
+local SPEED, SPEED_RUSH = 10, 1
 local pathEnemies, enemies, GetReward, ClearAll = {}, {}, nil
 
 function Class.start()
@@ -24,15 +24,12 @@ function Class.new(game, round, enemyType, pathId, health, reward)
 	self.Type = enemyType
 	self.WaypointIndex = 1
 	self.Waypoint = shared.Path.Paths[pathId].Waypoints[self.WaypointIndex]
-	if enemyType == 'Mob' then
-		self.RawSpeed = SPEED
-		self.Speed = SPEED
-	elseif enemyType == 'Rush' then
+	if enemyType == 'Rush' then
 		self.RawSpeed = SPEED_RUSH
 		self.Speed = SPEED_RUSH
 	else
-		self.RawSpeed = SPEED_BOSS
-		self.Speed = SPEED_BOSS
+		self.RawSpeed = SPEED
+		self.Speed = SPEED
 	end
 	self.Game = game
 	self.TickConnection = self.Game.Task.OnTick:Connect(Step, self)

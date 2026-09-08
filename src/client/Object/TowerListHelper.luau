@@ -33,7 +33,7 @@ function self.GetSortedTowerTable(inv, sortMode)
     return clone
 end
 
-function self.GetSlotByStaticData(staticData, traitId)
+function self.GetSlotByStaticData(staticData, traitId, inIndex)
     local assetId = TowerData.GetAssetIdByTowerUID(staticData.TowerUID)
     if assetId == nil then warn('asset data not found for toweruid:', staticData.TowerUID); return end
     local template = ReplicatedStorage.Assets.UI.AlienSlot:FindFirstChild(staticData.Quality)
@@ -43,6 +43,10 @@ function self.GetSlotByStaticData(staticData, traitId)
     clone.LevelText.Text = TowerData.GetLvlByTowerUID(staticData.TowerUID)
     clone.NameText.Text = staticData.DisplayName
     clone.Icon.Image = AssetsData[assetId].Icon
+    if not inIndex then
+        clone.ShapeIcon.Shape.Image = shared.ShapeData[staticData.Shape].Icon
+        clone.ShapeIcon.Visible = true
+    end
     local mutId = TowerData.GetMutIdByTowerUID(staticData.TowerUID)
     if clone.Mutations:FindFirstChild(tostring(mutId)) then
         clone.Mutations:FindFirstChild(tostring(mutId)).Visible = true
@@ -58,12 +62,14 @@ function self.GetSlotByStaticData(staticData, traitId)
     
     CollectionService:AddTag(clone, 'Btn')
 
-    clone.MouseEnter:Connect(function()
-        shared.UIHandler.AlienTips.Show(clone, staticData, traitId)
-    end)
-    clone.MouseLeave:Connect(function()
-        shared.UIHandler.AlienTips.Hide(clone)
-    end)
+    if not inIndex then
+        clone.MouseEnter:Connect(function()
+            shared.UIHandler.AlienTips.Show(clone, staticData, traitId)
+        end)
+        clone.MouseLeave:Connect(function()
+            shared.UIHandler.AlienTips.Hide(clone)
+        end)
+    end
 
     return clone
 end

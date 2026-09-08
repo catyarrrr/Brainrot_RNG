@@ -56,7 +56,7 @@ function self.Farm(player, reward)
     local friendBoost = (self.FriendCount[player] or 0) * shared.Config.COIN_FRIENDBOOST + 1
     local boost = shared.Config.COIN_COLLECTIONBOOST
     local collectionMulti = math.floor(tarData.Tower.Collection.Total / boost) * boost / 100 + 1
-    tarData.Coin.Cash += reward * tarData.Coin.CashMultiplier * tarData.Coin.VipMultiplier * collectionMulti * friendBoost
+    tarData.Coin.Cash += reward * (tarData.Coin.CashMultiplier + tarData.Coin.VipMultiplier + collectionMulti + friendBoost)
     tarData.Profile.Kills += 1
 
     self.SetPlayerData(player, 'Cash')

@@ -1,8 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
-local SummonData = require(ReplicatedStorage.Datas.SummonData :: ModuleScript)
-local RewardData = require(ReplicatedStorage.Shared.Data.RewardData)
 
 local self = {}
 
@@ -18,9 +16,9 @@ function self.Place(player, uid, towerUID, gridXY, shapeName)
     local tarData = self.GetData(player)
     if not tarData then return end
 
-    local chk = self.GridModule.CheckPlace(tarData.Grid, shared.ShapeData[shapeName], gridXY[1], gridXY[2])
+    local chk = self.GridModule.CheckPlace(tarData.Grid, shared.ShapeData[shapeName].Cells, gridXY[1], gridXY[2])
     if chk == true then
-        self.GridModule.Place(tarData.Grid, shared.ShapeData[shapeName], gridXY[1], gridXY[2], uid)
+        self.GridModule.Place(tarData.Grid, shared.ShapeData[shapeName].Cells, gridXY[1], gridXY[2], uid)
         self.TowerModule.SetTowerGrid(tarData.Tower, uid, gridXY)
         self.SetPlayerData(player)
         return true
@@ -32,7 +30,7 @@ function self.Remove(player, uid, towerUID, gridXY, shapeName)
     local tarData = self.GetData(player)
     if not tarData then return end
 
-    self.GridModule.Remove(tarData.Grid, shared.ShapeData[shapeName], gridXY[1], gridXY[2])
+    self.GridModule.Remove(tarData.Grid, shared.ShapeData[shapeName].Cells, gridXY[1], gridXY[2])
     self.TowerModule.SetTowerGrid(tarData.Tower, uid, nil)
     self.SetPlayerData(player)
 end
@@ -44,7 +42,7 @@ function self.RemoveAll(player)
     for k, v in tarData.Tower.Inv do
         if v.GridXY == nil then continue end
         local staticData = TowerData.GetData(v.TowerUID)
-        self.GridModule.Remove(tarData.Grid, shared.ShapeData[staticData.Shape], v.GridXY[1], v.GridXY[2])
+        self.GridModule.Remove(tarData.Grid, shared.ShapeData[staticData.Shape].Cells, v.GridXY[1], v.GridXY[2])
         self.TowerModule.SetTowerGrid(tarData.Tower, v.UID, nil)
         self.TowerModule.UnEquip(tarData.Tower, v.UID)
     end

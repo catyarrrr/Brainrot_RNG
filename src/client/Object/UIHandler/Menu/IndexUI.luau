@@ -1,5 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CloneUI = require(script.Parent.CloneUI)
 local CollectionData = require(ReplicatedStorage.Datas.CollectionData :: ModuleScript)
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
@@ -79,7 +80,9 @@ function self.Update(newIndex)
         for _, towerUID in pairs(dict) do
             local staticData = TowerData.GetData(towerUID)
 
-            local slot = shared.TowerListHelper.GetSlotByStaticData(staticData)
+            local collectionUID, notCollect = math.floor(towerUID/100) * 100, nil
+            if collection[tostring(collectionUID)] then notCollect = nil else notCollect = true end
+            local slot = shared.TowerListHelper.GetSlotByStaticData(staticData, nil, notCollect)
             if slot == nil then continue end
 
             slot:SetAttribute('TowerUID', staticData.TowerUID)

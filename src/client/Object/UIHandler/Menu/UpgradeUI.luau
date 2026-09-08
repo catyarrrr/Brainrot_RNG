@@ -67,7 +67,14 @@ function self.Init(main)
         self:Close()
     end)
     self.LuckFrame.MaxButton.MouseButton1Click:Connect(function()
-        shared.BuyHandler.BuyPass(shared.ProductDatas.PASSID_2XLuck)
+        local playerData = shared.PlayerDataHandler.GetData()
+        if playerData == nil then return end
+
+        if playerData.VIP.DoubleLuck == false then
+            shared.BuyHandler.BuyPass(shared.ProductDatas.PASSID_2XLuck)
+        elseif playerData.VIP.TripleLuck == false then
+            shared.BuyHandler.BuyPass(shared.ProductDatas.PASSID_3XLuck)
+        end
         self:Close()
     end)
     self.CashFrame.CashButton.MouseButton1Click:Connect(function()
@@ -137,13 +144,17 @@ function self.Update()
     if tripleluck then luckLevel -= 1 end
     local luckData = TempData.LuckDict[luckLevel]
     if luckData.NextCost == nil then
-        self.LuckFrame.CashButton.TextLabel.Text = 'MAX'
+        self.LuckFrame.CashButton.Visible = false
         self.LuckFrame.RBXButton.Visible = false
+        self.LuckFrame.MaxButton.Visible = true
         self.LuckFrame.DataText.Text = string.format('%d%% Luck', luckData.Display)
-        if doubleluck == true then
-            self.LuckFrame.MaxButton.Visible = false
+
+        if doubleluck == false then
+            self.LuckFrame.MaxButton.TextLabel.Text = '149'
+        elseif tripleluck == false then
+            self.LuckFrame.MaxButton.TextLabel.Text = '499'
         else
-            self.LuckFrame.MaxButton.Visible = true
+            self.LuckFrame.MaxButton.Visible = false
         end
     else
         self.LuckFrame.MaxButton.Visible = false

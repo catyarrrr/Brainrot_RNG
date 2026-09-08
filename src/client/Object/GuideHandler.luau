@@ -18,7 +18,7 @@ local GuideStep = {
         if root == nil then return end
 
         local rollPart = shared.GridHandler.GachaMachine.Roll
-        shared.UIHandler.ToggleGuide(true, 'Roll and buy yr first alien')
+        shared.UIHandler.ToggleGuide(true, 'Roll and buy yr first brainrot')
         shared.VFXHandler.ShowGuideBeam('GuideToRoll', rollPart, nil, root, nil)
     end,
     GuideToEquip = function()   
@@ -26,7 +26,7 @@ local GuideStep = {
         local root = char and char:WaitForChild('HumanoidRootPart')
         if root == nil then return end
 
-        shared.UIHandler.ToggleGuide(true, 'Equip yr first alien')
+        shared.UIHandler.ToggleGuide(true, 'Equip yr first brainrot')
         shared.UIHandler.SetMask(shared.UIHandler.GuideCover.EquipGuide)
     end,
     GuideToPlace = function()   
@@ -35,7 +35,7 @@ local GuideStep = {
         if root == nil then return end
         local area = shared.GridHandler.Area
 
-        shared.UIHandler.ToggleGuide(true, 'Place yr first alien')
+        shared.UIHandler.ToggleGuide(true, 'Place yr first brainrot')
         shared.VFXHandler.ShowGuideBeam('GuideToRoll', area.AreaPos, Vector3.new(0, 0, 10), root, nil)
     end,
     GuideToStart = function()   

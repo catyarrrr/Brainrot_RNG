@@ -35,7 +35,7 @@ function self.SpawnCell(_, plr, towerUID, id, gridXY, shapeName)
 
     local model = Instance.new('Model')
     model.Parent = workspace
-    for _, offset in ipairs(shared.ShapeData[shapeName]) do
+    for _, offset in ipairs(shared.ShapeData[shapeName].Cells) do
         local x = gridXY[1] + offset[1]
         local y = gridXY[2] + offset[2]
         local worldPos = self.GridToWorld(x, y)
@@ -61,7 +61,7 @@ function self.SpawnPlayerCell(_, plr, towerUID, id, gridXY, shapeName, _, cframe
     local model = Instance.new('Model')
     model.Parent = workspace
 
-    for _, offset in ipairs(shared.ShapeData[shapeName]) do
+    for _, offset in ipairs(shared.ShapeData[shapeName].Cells) do
         local offsetX = offset[1]
         local offsetY = offset[2]
 
@@ -245,14 +245,14 @@ function ModifyHealthBar(amount)
 end
 
 function ModelInit(self)
-    local buyTrigger = ReplicatedStorage.Assets.Parts.BuyTrigger
-    for _, v in buyTrigger:GetDescendants() do
-        if v:IsA('Script') then
-            v.Enabled = true 
-        end
-    end
-    buyTrigger:PivotTo(self.Area.BuyPos.WorldCFrame)
-    buyTrigger.Parent = workspace
+    -- local buyTrigger = ReplicatedStorage.Assets.Parts.BuyTrigger
+    -- for _, v in buyTrigger:GetDescendants() do
+    --     if v:IsA('Script') then
+    --         v.Enabled = true 
+    --     end
+    -- end
+    -- buyTrigger:PivotTo(self.Area.BuyPos.WorldCFrame)
+    -- buyTrigger.Parent = workspace
     self.UpgradeModel = ReplicatedStorage.Assets.Parts.Upgrade
     self.UpgradeModel:PivotTo(self.Area.UpgradePos.WorldCFrame)
     self.UpgradeModel.Parent = workspace

@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local LevelData = require(ReplicatedStorage.Datas.LevelData :: ModuleScript)
 local TotemData = require(ReplicatedStorage.Datas.TotemData :: ModuleScript)
+local TempData = require(ReplicatedStorage.Datas.TempData :: ModuleScript)
 
 local HEIGHT_ORI, HEIGHT_HIDDEN = 2, -100
 local Class = {collections = {}, Initiated = nil}
@@ -109,7 +110,7 @@ function Class.new(model)
 end
 
 function Class:Enter(data, plr)
-	local playerLevel = GetLevelByWH(data.Grid.Width, data.Grid.Height)
+	local playerLevel = TempData.GetLevelByGrid(data.Grid)
 	if playerLevel == nil then return end
 
 	self:ChangeLevel(playerLevel)
@@ -285,19 +286,6 @@ function Class:Reset()
 	self:SwitchMap(1)
 	self.Level = nil
 	if self.Platform then self.Platform:Destroy() end
-end
-
-function GetLevelByWH(wid, hei)
-	local dict = {
-		[4] = {[4] = 1},
-		[8] = {[4] = 2, [6] = 3, [8] = 4},
-	}
-
-	local level = dict[wid]
-	level = level and level[hei]
-	if level == nil then warn('level not fetch for wid/hei :', wid, hei); return end
-
-	return level
 end
 
 function UpdateDPS(player, pathId)

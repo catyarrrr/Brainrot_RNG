@@ -17,8 +17,8 @@ return {
         Clone = {
             SourceUID = false,
             EndTime = 0,
-            SourceUID1 = false,
-            EndTime1 = 0,
+            SourceUID2 = false,
+            EndTime2 = 0,
         },
         Evolve = {
             SourceUID = false,

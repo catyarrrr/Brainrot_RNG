@@ -2,12 +2,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local TraitData = require(ReplicatedStorage.Datas.TraitData :: ModuleScript)
 local TotemData = require(ReplicatedStorage.Datas.TotemData :: ModuleScript)
+local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
 
 local self : any = {}
-
-function self.init()
-    self.PickUpEvent = shared.Event.new()
-end
 
 function self.Init(main)
 	self.Main = shared.Frame.new(main.PopUp.TowerDetailFrame)
@@ -32,9 +29,13 @@ function self.Trigger(isShow, towerData, isTool)
     if isTool then
         self.Frame.Pickup.Visible = false
         self.Frame.Exit.Visible = false
+        self.Frame.ShapeIcon.Visible = true
+        self.Frame.Rotate.Visible = true
     else
         self.Frame.Pickup.Visible = true
         self.Frame.Exit.Visible = true
+        self.Frame.ShapeIcon.Visible = false
+        self.Frame.Rotate.Visible = false
     end
 
     if isShow then
@@ -55,10 +56,12 @@ function self.Update(towerData)
 
     self.SelectedId = towerData.Id
     self.Frame.Label.NameText.Text = towerData.DisplayName
-    self.Frame.Label.QualityText.Text = towerData.Quality
-    self.Frame.Label.QualityText.TextColor3 = TowerData.GetRGBByTowerUID(towerData.TowerUID)
+    self.Frame.Label.Icon.Image = AssetsData[towerData.AssetId].Icon
+    self.Frame.ShapeIcon.ImageLabel.Image = shared.ShapeData[towerData.Shape].Icon
+    self.Frame.Info.QualityText.Text = towerData.Quality
+    self.Frame.Info.QualityText.TextColor3 = TowerData.GetRGBByTowerUID(towerData.TowerUID)
     local lvl = TowerData.GetLvlByTowerUID(towerData.TowerUID)
-    if lvl then self.Frame.Label.LevelText.Text = 'Lv.' .. tostring(lvl) end
+    if lvl then self.Frame.Info.LevelText.Text = 'Lv.' .. tostring(lvl) end
     local mutId = TowerData.GetMutIdByTowerUID(towerData.TowerUID)
     if mutId then
         for k, v in self.Frame.Label.Mutations:GetChildren() do if v:IsA('TextLabel') then v.Visible = false end end

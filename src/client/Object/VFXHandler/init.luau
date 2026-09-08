@@ -159,7 +159,7 @@ function self.ShowTowerOnMouse(modelName, towerUID)
 
 	self.CurGrid[1], self.CurGrid[2] = 3, 3
 	visualTower:PivotTo(shared.GridHandler.GridToWorld(self.CurGrid[1], self.CurGrid[2]))
-	shared.GridHandler.SpawnGhostCell(self.CurGrid[1], self.CurGrid[2], shared.ShapeData[data.Shape])
+	shared.GridHandler.SpawnGhostCell(self.CurGrid[1], self.CurGrid[2], shared.ShapeData[data.Shape].Cells)
 		
 	-------  点击按钮时静止移动幽灵塔位置
 	local isTouching = false
@@ -209,7 +209,7 @@ function self.ShowTowerOnMouse(modelName, towerUID)
 				upgradeTowerHighlight.Enabled = true
 			else
 				upgradeTowerHighlight.Enabled = false
-				shared.GridHandler.SpawnGhostCell(self.CurGrid[1], self.CurGrid[2], shared.ShapeData[data.Shape])
+				shared.GridHandler.SpawnGhostCell(self.CurGrid[1], self.CurGrid[2], shared.ShapeData[data.Shape].Cells)
 			end
 			
 			-- if spawnable then

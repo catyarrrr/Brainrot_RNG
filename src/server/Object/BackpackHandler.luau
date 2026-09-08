@@ -25,31 +25,11 @@ end
 function self.InitBackpack(self, player, towers)
 	-- print('start init bp')
 	local function init()
-		local backpack = player:WaitForChild('Backpack')
+		player:WaitForChild('Backpack')
 
-		local cot = 0
 		for k, v in towers do
-			-- print('set tool')
 			if v.IsTool == false then continue end
-			cot += 1
-			if cot >= shared.Config.BACKPACK_MAXTOOL then break end
-			local tarTool = Instance.new('Tool')
-			local staticData = TowerData.GetData(v.TowerUID)
-			local assetId = TowerData.GetAssetIdByTowerUID(v.TowerUID)
-			tarTool.RequiresHandle = false
-
-			tarTool.Name = staticData.DisplayName
-			tarTool.TextureId = AssetsData[assetId].Icon
-
-			tarTool:SetAttribute('TowerUID', v.TowerUID)
-			tarTool:SetAttribute('Quality', staticData.Quality)
-			tarTool:SetAttribute('UID', v.UID)
-			tarTool:SetAttribute('MutId', TowerData.GetMutIdByTowerUID(v.TowerUID))
-			tarTool:SetAttribute('Level', TowerData.GetLvlByTowerUID(v.TowerUID))
-			tarTool:SetAttribute('DisplayName', staticData.DisplayName)
-			if v.Trait then tarTool:SetAttribute('Trait', v.Trait) end
-			GenerateTowerVisual(tarTool, v.TowerUID)
-			tarTool.Parent = backpack
+			self.AddPlayerBackpackTool(player, v.UID)
 		end
 	end
 
@@ -105,6 +85,7 @@ function self.AddPlayerBackpackTool(player, uid)
 	tarTool:SetAttribute('MutId', TowerData.GetMutIdByTowerUID(tarData.TowerUID))
 	tarTool:SetAttribute('Level', TowerData.GetLvlByTowerUID(tarData.TowerUID))
 	tarTool:SetAttribute('DisplayName', staticData.DisplayName)
+	tarTool:SetAttribute('Shape', shared.ShapeData[staticData.Shape].Icon)
 	if tarData.Trait then tarTool:SetAttribute('Trait', tarData.Trait) end
 	GenerateTowerVisual(tarTool, tarData.TowerUID)
 	tarTool.Parent = backpack

@@ -25,10 +25,10 @@ function self.SetTowerGrid(towerData, uid, gridXY)
 end
 function self.UpgradeTowerGrid(towerData, nextLevel)
     
-    if nextLevel == 2 then
+    if nextLevel == 2 or nextLevel == 3 then
         for _, data in towerData.Inv do
             if data.GridXY then
-                data.GridXY[1] += 2
+                data.GridXY[1] += 1
             end
         end
     end

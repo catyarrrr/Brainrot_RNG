@@ -1,4 +1,4 @@
-local self = {ExpIncEvent = nil, LEVEL_MAX = 4}
+local self = {ExpIncEvent = nil, LEVEL_MAX = 7}
 
 function self.init()
     
@@ -49,7 +49,7 @@ function self.Remove(gridData, shape, gridX, gridY)
 end
 
 function self.GridUpgrade(playerGrid, nextLevel)
-    local dict = {[1] = {4, 4}, [2] = {8, 4}, [3] = {8, 6}, [4] = {8, 8}}
+    local dict = {[1] = {4, 4}, [2] = {6, 4}, [3] = {8, 4}, [4] = {8, 5}, [5] = {8, 6}, [6] = {8, 7}, [7] = {8, 8}}
     local scale = dict[nextLevel]
     if scale == nil then warn('upgrade grid error for nextlevel:', nextLevel); return end
 
@@ -79,7 +79,8 @@ function self.GetLevel(playerGrid)
 
 	local dict = {
 		[4] = {[4] = 1},
-		[8] = {[4] = 2, [6] = 3, [8] = 4},
+		[6] = {[4] = 2},
+		[8] = {[4] = 3, [5] = 4, [6] = 5, [7] = 6, [8] = 7},
 	}
 
 	local level = dict[wid]

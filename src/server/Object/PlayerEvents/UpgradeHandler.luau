@@ -67,11 +67,16 @@ function self.UpgradeStartLevel(player)
 	local playerData = shared.DataStore.GetData(player)
 	local startLevel = playerData.Profile.StartLevel
 	local startLevelData = TempData.StartLevelDict[startLevel]
+	local maxLevel = playerData.Profile.MaxLevel
 
 	if startLevelData.Next == nil then
 		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Level MAX!!!')
 		return
 	else
+		if startLevelData.Next > maxLevel then
+			ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Reach higher wave to upgrade !!!')
+			return
+		end
 		local cost = startLevelData.Cost
 		local chk = shared.DataStore.CoinController.CheckCash(player, cost)
 		if chk == true then

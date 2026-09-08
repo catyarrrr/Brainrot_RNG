@@ -62,6 +62,7 @@ function New(model)
     local rollPrompt = Instance.new('ProximityPrompt')
     rollPrompt.HoldDuration = .3
     rollPrompt.ActionText = 'Roll'
+    rollPrompt.RequiresLineOfSight = false
     rollPrompt.Parent = model.Roll
 
     rollPrompt.Triggered:Connect(function(player)
@@ -109,6 +110,7 @@ function Class:Gacha(player)
         table.insert(towers, SummonData.Gacha(luck, key, vipMut))
     end
 
+    print(towers)
     --  事件影响突变
     if shared.ServerEvent.IsMut and shared.ServerEvent.IsMut == true then
         local gachaDict
@@ -263,7 +265,11 @@ function InitTowerModel(assets, towerData)
         local animationController = clone:FindFirstChild('AnimationController')
         if not animationController then print('animationController not found'); return end
         
-        local animator: Animator = animationController.Animator
+        local animator = animationController:FindFirstChild('Animator')
+        if animator == nil then 
+            animator = Instance.new('Animator')
+            animator.Parent = animationController
+        end
         local animationTrack : AnimationTrack = animator:LoadAnimation(targetAnimation)
         animationTrack.Looped = true
         animationTrack:Play()

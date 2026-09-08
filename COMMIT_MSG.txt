@@ -1,0 +1,19 @@
+feat: v0.3 game progression & collection improvements
+
+1. Shape data rework - Shapes now store Cells + an Icon asset instead of a bare cell array; updated GridHandler, GridController, TowerController, VFXHandler, BackpackHandler and shared TowerDetail UI accordingly.
+
+2. New grid leveling system - Grid sizes expanded to 7 levels (4x4 -> 8x8 with 6x4/8x5/8x7 steps), level lookup moved to TempData.GetLevelByGrid, tower grid offsets rebalanced, max level raised.
+
+3. Collection/Index & tower detail UI - Index slots now show shape icons and distinguish collected vs. uncollected towers; TowerDetailPopup redesigned (icon, shape icon, quality/level labels moved), new rotatable tool view.
+
+4. Luck system upgrades - Max-luck purchase now chains 2xLuck -> 3xLuck passes (149/499 cost tiers) based on owned VIP; product IDs updated for passes & starter pack.
+
+5. Store/purchases - Divine Pack store button wired up; reward tables updated with new tower IDs, login/free-reward tower IDs and item counts.
+
+6. Enemy rebalance - Removed distinct boss speed tier (bosses now move at normal speed); rush speed adjusted.
+
+7. New events/bug fixes - Start-level upgrade now gated by player's max reached wave; Animator instances created if missing in cloned models; gacha roll prompt no longer needs line-of-sight.
+
+8. Coin farm formula - Changed from multiplicative to additive multipliers.
+
+9. Cleanups - Removed unused BuyTrigger setup, unused imports (SummonData/RewardData), renamed clone profile fields; fixed PlayerDatas Clone 2 slot; other UI text polish ("alien" -> "brainrot").
