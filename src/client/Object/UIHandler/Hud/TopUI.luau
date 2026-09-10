@@ -95,6 +95,12 @@ function self.Update(playerData)
     else
         self.AutoBtnFrame.Visible = false
     end
+
+    if playerData.Profile.MaxLevel >= 300 then
+        self.BossBtn.Visible = true
+    else
+        self.BossBtn.Visible = false
+    end
 end
 
 function self.ShowRushBossBar(show, maxHealth)

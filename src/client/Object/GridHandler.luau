@@ -53,6 +53,7 @@ function self.SpawnCell(_, plr, towerUID, id, gridXY, shapeName)
     local rgb = TowerData.GetRGBByTowerUID(towerUID)
     highlight.FillColor = rgb
     highlight.OutlineColor = rgb
+    highlight.Adornee = model
     highlight.Parent = model
 end
 function self.SpawnPlayerCell(_, plr, towerUID, id, gridXY, shapeName, _, cframe)
@@ -245,14 +246,10 @@ function ModifyHealthBar(amount)
 end
 
 function ModelInit(self)
-    -- local buyTrigger = ReplicatedStorage.Assets.Parts.BuyTrigger
-    -- for _, v in buyTrigger:GetDescendants() do
-    --     if v:IsA('Script') then
-    --         v.Enabled = true 
-    --     end
-    -- end
-    -- buyTrigger:PivotTo(self.Area.BuyPos.WorldCFrame)
-    -- buyTrigger.Parent = workspace
+    local buyTrigger = ReplicatedStorage.Assets.Parts.BuyTrigger
+    for _, v in buyTrigger:GetDescendants() do if v:IsA('Script') then v.Enabled = true  end end
+    buyTrigger:PivotTo(self.Area.BuyPos.WorldCFrame)
+    buyTrigger.Parent = workspace
     self.UpgradeModel = ReplicatedStorage.Assets.Parts.Upgrade
     self.UpgradeModel:PivotTo(self.Area.UpgradePos.WorldCFrame)
     self.UpgradeModel.Parent = workspace

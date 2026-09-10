@@ -171,7 +171,7 @@ function Class:ModifyHealth(amount)
 		if oriHealth < amount then 
 			shared.Bar.PlayEmptyEffect(self.Model.Head)
 		end
-		shared.SoundHandler:PlayRanAt('CharacterDestroy', self.Model.PrimaryPart.Position)
+		-- shared.SoundHandler:PlayRanAt('CharacterDestroy', self.Model.PrimaryPart.Position)
 		shared.VFXHandler.PlayParticleEvent:Fire('EnemyDeadParticle', self.Model.Torso.Position, 1)
 		if self.Type ~= 'Rush' then
 			shared.VFXHandler.EnemyFarmEvent:Fire(self.Model:GetPivot().Position, self.Reward)

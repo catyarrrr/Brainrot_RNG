@@ -10,7 +10,7 @@ self.StateDict = {
 	Idle = 'Idle',
 	GoldMut = 'GoldMut',
 	DiamondMut = 'DiamondMut',
-	AlienFeast = 'AlienFeast',
+	SixSevenFeast = 'SixSevenFeast',
 	CashDrop = 'CashDrop',
 
 }
@@ -58,8 +58,8 @@ local EnumState = {
 		end,
 	},
 
-	AlienFeast = {
-		name = 'AlienFeast',
+	SixSevenFeast = {
+		name = 'SixSevenFeast',
 
 		enter = function(self)
 			GetNextEvent()
@@ -81,7 +81,7 @@ local EnumState = {
 			workspace.SceneLogic.MKEvent.ProximityPrompt.Enabled = true
 			self.MKPromptConn = workspace.SceneLogic.MKEvent.ProximityPrompt.Triggered:Connect(MKPrompt)
 			SpawnMKFood()
-			SwitchGround('AlienFeast')
+			SwitchGround('SixSevenFeast')
 		end,
 
 		exit = function(self)
@@ -313,7 +313,7 @@ function SpawnFragment()
 			local itemId = shared.Tool.GachaByDict(list)
 			shared.DataStore.RewardController.GetEventFragments(player, itemId, 1)
 			self.FragmentLeft -= 1
-			if self.FragmentLeft == 0 and self.State.name == 'AlienFeast' then
+			if self.FragmentLeft == 0 and self.State.name == 'SixSevenFeast' then
 				task.delay(5, function() SpawnFragment() end)
 			end
 			instance:Destroy()

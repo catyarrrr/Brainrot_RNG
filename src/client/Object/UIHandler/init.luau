@@ -123,7 +123,7 @@ function self.start()
 	ReplicatedStorage.Remote.MKEvent.OnClientEvent:Connect(function(foods, time) 
 		-- print(foods, time)
 		if foods == nil then
-			self.EventUI.EndEvent('AlienFeast')
+			self.EventUI.EndEvent('SixSevenFeast')
 			self.MKEventUI.Update(foods, time) 
 			self.EventUI.Event('BigMut', time)
 		else
@@ -353,6 +353,9 @@ function DataChangeUpdate(_, tag)
 	end
 	if tag and table.find(tag, 'WheelUpdate') then
 		self.WheelUI.Countdown(playerData)
+	end
+	if tag and table.find(tag, 'Level') then
+		self.TopUI.Update(playerData)
 	end
 	if tag and table.find(tag, 'OfflineReward') then
 		CashFrameUpdate(playerData)

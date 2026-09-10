@@ -200,7 +200,7 @@ function self.PlayerUpdateMaxLevel(player, maxLevel)
         tarData.Profile.MaxLevel = maxLevel
     end
 
-    self.SetPlayerData(player)
+    self.SetPlayerData(player, 'Level')
 end
 function self.PlayerUpdateMaxChallenge(player, maxChallenge)
     local dataStore = stores[player]

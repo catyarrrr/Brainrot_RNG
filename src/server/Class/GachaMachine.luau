@@ -123,7 +123,7 @@ function Class:Gacha(player)
             gachaDict[2] += 1000
             gachaDict[3] += 500
             gachaDict[4] += 50
-        -- elseif shared.ServerEvent.State.name == shared.ServerEvent.StateDict.AlienFeast then
+        -- elseif shared.ServerEvent.State.name == shared.ServerEvent.StateDict.SixSevenFeast then
         --     gachaDict[2] += 500
         --     gachaDict[3] += 500
         --     gachaDict[4] += 500

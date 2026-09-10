@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcpServers": {
+    "Roblox_Studio": {
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "cd /d %LOCALAPPDATA%\\Roblox && .\\mcp.bat"
+      ]
+    }
+  }
+}

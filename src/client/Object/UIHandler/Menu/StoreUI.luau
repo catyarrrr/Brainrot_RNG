@@ -1,3 +1,6 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SummonData = require(ReplicatedStorage.Datas.SummonData :: ModuleScript)
+
 local self : any = {}
 
 function self.start()
@@ -13,6 +16,8 @@ function self.Init(main)
     self.Main:Visible(false)
     
     self.Frame = self.Main.Frame.Frame
+    self.OddTips = self.Frame.OddTips
+    self.OddTips.Visible = false
     self.ScrollingFrame = self.Frame.ScrollingFrame
     self.Pass1Frame = self.ScrollingFrame.Pass1
     self.Pass2Frame = self.ScrollingFrame.Pass2
@@ -77,6 +82,27 @@ function self.Init(main)
         shared.BuyHandler.BuyProduct(shared.ProductDatas.SecretBundle)
     end)
 
+    --#region  概率按钮
+    self.ScrollingFrame.LimitedPackFrame.ODDS.MouseButton1Click:Connect(function()
+        self.OpenOddTips(6)
+    end)
+    self.ScrollingFrame.DivinePackFrame.ODDS.MouseButton1Click:Connect(function()
+        self.OpenOddTips(5)
+    end)
+    self.ScrollingFrame.GodPackFrame.ODDS.MouseButton1Click:Connect(function()
+        self.OpenOddTips(4)
+    end)
+    self.ScrollingFrame.SecretPackFrame.ODDS.MouseButton1Click:Connect(function()
+        self.OpenOddTips(3)
+    end)
+    self.ScrollingFrame.MythicPackFrame.ODDS.MouseButton1Click:Connect(function()
+        self.OpenOddTips(2)
+    end)
+    --#endregion
+
+    self.Frame.OddTips.Close.MouseButton1Click:Connect(function()
+        self.OddTips.Visible = false
+    end)
     self.Frame.Title.Close.MouseButton1Click:Connect(function()
         shared.SoundHandler:Play('UI_Fail')
         self:Close()
@@ -101,6 +127,26 @@ function self:Open()
 end
 function self:Close()
     self.Main:TweenClose()
+end
+
+function self.OpenOddTips(key)
+    local data = SummonData.GetOddDict(key)
+    if data == nil then return end
+
+    self.OddTips.Title.TextLabel.Text = data.name
+    self.OddTips.Desc.TextLabel.Text = data.desc
+
+    local names = {}
+    local rates = {}
+    for key, value in pairs(data.odds) do
+        table.insert(names, key)
+        table.insert(rates, tostring(value) .. '%')
+    end
+
+    self.OddTips.Countend.name.Text = table.concat(names, "\n")
+    self.OddTips.Countend.rate.Text = table.concat(rates, "\n")
+
+    self.OddTips.Visible = true
 end
 
 
