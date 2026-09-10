@@ -92,7 +92,7 @@ function self.PlayParticle(_, name, pos, time)
 end
 function PlayTowerParticle(_, towerUID, pos, time, orientation)
 	local towerType = TowerData.GetTowerTypeByTowerUID(towerUID)
-	local name = 'Tower' .. tostring(towerType) .. 'Particle'
+	local name = 'BR' .. tostring(towerType) .. 'Particle'
 	self.ParticleModule.Play(name, pos, time, orientation)
 end
 

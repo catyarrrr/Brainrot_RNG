@@ -294,8 +294,6 @@ function Reconcile(data, template)
     return data
 end
 function ServerEnterInit(player, data)
-    self.TowerController.RepairCloneEvolve(player)
-
     local lastTime = data.States.LastTime
     local now = os.time()
 
@@ -306,6 +304,8 @@ function ServerEnterInit(player, data)
     end
 
     if data.States.LastTime ~= nil then SetOfflineReward(data) end
+
+    self.TowerController.RepairCloneEvolve(player)
 
 	-- data.States.LastTime = os.time()
     data.Gacha.LastSpin = workspace:GetServerTimeNow()

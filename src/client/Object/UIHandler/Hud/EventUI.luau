@@ -6,6 +6,7 @@ function self.Init(main)
 
     self.TimerFrame = self.Main.Frame.Timer
     self.BuffFrame = self.Main.Frame.Buff
+    self.BuffFrame.Visible = true
     self.EventLabel = self.Main.Frame.Timer.desc
     self.TimerLabel = self.Main.Frame.Timer.timer
 
@@ -17,7 +18,7 @@ function self.Init(main)
 
                 child.Tips.Visible = true
 
-                task.delay(2, function() child.Tips.Visible = false end)
+                task.delay(5, function() child.Tips.Visible = false end)
             end)
         end
     end

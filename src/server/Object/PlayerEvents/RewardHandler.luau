@@ -38,7 +38,7 @@ function self.CheckTask(player, line)
 
 	if taskConfig.Type == 2 then
 		if playerData.Tower.Collection.Total >= taskConfig.Collect then chk = true end
-		text = 'Collect more Alien to claim the reward!!!'
+		text = 'Collect more Brainrot to claim the reward!!!'
 
 	elseif taskConfig.Type == 3 then
 		local curLevel = TempData.GetLevelByGrid(playerData.Grid)

@@ -283,8 +283,6 @@ function self.RepairCloneEvolve(player)
             entry.IsEvolving = nil
         end
     end
-
-    self.SetPlayerData(player)
 end
 
 function self.StartClone(player, uid)

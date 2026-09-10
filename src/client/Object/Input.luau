@@ -33,6 +33,11 @@ local EnumState = {
 				shared.UIHandler.TriggerTowerDetailEvent:Fire(true, self.SelectedTower)
 				shared.VFXHandler.SetTowerHighlight(self.SelectedTower.Rig)
 				self.SelectedTower.Model.Circle.Transparency = 0
+
+				local towerType = TowerData.GetTowerTypeByTowerUID(self.SelectedTower.TowerUID)
+				if towerType then
+					shared.SoundHandler:PlayGroupSound('BrainrotAction', 'Action_BR' .. tostring(towerType))
+				end
 			end
 		end,
 

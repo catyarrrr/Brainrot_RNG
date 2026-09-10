@@ -258,21 +258,21 @@ function InitAfterData()
 				end
 			end)
 
-			self.TotemGui.Adornee = shared.GridHandler.Area.TotemPos
-			local prayCashDebounce = false
-			self.TotemGui.Frame.Frame.PrayCash.MouseButton1Click:Connect(function()
-				if prayCashDebounce then return end
-				prayCashDebounce = true
-				ReplicatedStorage.Remote.Tower.PrayTotem:FireServer()
-				task.wait(3)
-				prayCashDebounce = false
-			end)
-			self.TotemGui.Frame.Frame.PrayRBX.MouseButton1Click:Connect(function()
-				shared.BuyHandler.BuyProduct(shared.ProductDatas.PrayTotem)
-			end)
-			self.TotemGui.Frame.Frame.x10PrayRBX.MouseButton1Click:Connect(function()
-				shared.BuyHandler.BuyProduct(shared.ProductDatas.PrayTotemx10)
-			end)
+			-- self.TotemGui.Adornee = shared.GridHandler.Area.TotemPos
+			-- local prayCashDebounce = false
+			-- self.TotemGui.Frame.Frame.PrayCash.MouseButton1Click:Connect(function()
+			-- 	if prayCashDebounce then return end
+			-- 	prayCashDebounce = true
+			-- 	ReplicatedStorage.Remote.Tower.PrayTotem:FireServer()
+			-- 	task.wait(3)
+			-- 	prayCashDebounce = false
+			-- end)
+			-- self.TotemGui.Frame.Frame.PrayRBX.MouseButton1Click:Connect(function()
+			-- 	shared.BuyHandler.BuyProduct(shared.ProductDatas.PrayTotem)
+			-- end)
+			-- self.TotemGui.Frame.Frame.x10PrayRBX.MouseButton1Click:Connect(function()
+			-- 	shared.BuyHandler.BuyProduct(shared.ProductDatas.PrayTotemx10)
+			-- end)
 		end)
 		self.TopUI.BestWaveFrame.TextLabel.Text = playerData.Profile.MaxLevel
 		self.TopUI.BestWave = playerData.Profile.MaxLevel
@@ -481,7 +481,7 @@ function TaskGuiBtnUpdate(playerData)
 
 		if taskConfig.Type == 2 then
 			--	收集
-			text = string.format('Collect %d different Aliens', taskConfig.Collect)
+			text = string.format('Collect %d different Brainrots', taskConfig.Collect)
 			self.TaskGui:FindFirstChild('Task'.. tostring(line)).ClaimButton.TextLabel.Text = string.format('%s \n Claim!', shared.Tool.FormatNumber(taskConfig.Reward)
 )
 		elseif taskConfig.Type == 3 then

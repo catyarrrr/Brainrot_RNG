@@ -1,6 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local CloneUI = require(script.Parent.CloneUI)
 local CollectionData = require(ReplicatedStorage.Datas.CollectionData :: ModuleScript)
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)

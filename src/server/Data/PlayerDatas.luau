@@ -75,7 +75,7 @@ return {
         GroupReward = false,
         VIPDaily = 0,
         PlaceVersion = 0,
-        OfflineReward = {Items = {}, Cash = 0},
+        OfflineReward = {Items = {}, Cash = 0, },
         IsNew = true,
         LoginReward = {
             Day = 1,

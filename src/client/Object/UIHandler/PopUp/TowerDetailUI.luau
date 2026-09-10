@@ -30,7 +30,7 @@ function self.Trigger(isShow, towerData, isTool)
         self.Frame.Pickup.Visible = false
         self.Frame.Exit.Visible = false
         self.Frame.ShapeIcon.Visible = true
-        self.Frame.Rotate.Visible = true
+        self.Frame.Rotate.Visible = false
     else
         self.Frame.Pickup.Visible = true
         self.Frame.Exit.Visible = true

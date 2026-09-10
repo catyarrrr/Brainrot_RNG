@@ -3,14 +3,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
 local TempData = require(ReplicatedStorage.Datas.TempData :: ModuleScript)
-local Init, SwitchGround, StartLoop, GetNextEvent, SpawnInstancesInPart, SpawnEventCash, SpawnMKFood = nil
+local RewardData = require(ReplicatedStorage.Datas.Reward :: ModuleScript)
+local Init, SwitchGround, StartLoop, GetNextEvent, SpawnInstancesInPart, SpawnEventCash, SpawnMKFood, SpawnFragment, ClaimFragmentReward = nil
 local self : any = {}
 self.StateDict = {
 	Idle = 'Idle',
 	GoldMut = 'GoldMut',
 	DiamondMut = 'DiamondMut',
 	AlienFeast = 'AlienFeast',
-	CashDrop = 'IdCashDrople',
+	CashDrop = 'CashDrop',
 
 }
 
@@ -33,14 +34,12 @@ local EnumState = {
 		name = 'GoldMut',
 
 		enter = function(self)
-			self.IsMut = true
 			GetNextEvent()
 			self.EventChangeEvent:Fire()
 			SwitchGround('Gold')
 		end,
 
 		exit = function(self)
-			self.IsMut = false
 		end,
 	},
 
@@ -66,18 +65,18 @@ local EnumState = {
 			GetNextEvent()
 			self.EventChangeEvent:Fire()
 			--#region 马克
-			workspace.NPCs.TianMaKe:ScaleTo(10)
-			local animationController = workspace.NPCs.TianMaKe:FindFirstChild('AnimationController', true)
-			if animationController then
-				local animation = animationController:FindFirstChild('EventAnimation')
-				local animator = animationController.Animator
-				if self.MKTrack == nil then
-					self.MKTrack = animator:LoadAnimation(animation)
-					self.MKTrack.Priority = Enum.AnimationPriority.Action
-					self.MKTrack.Looped = true
-				end
-				self.MKTrack:Play()
-			end	
+			workspace.NPCs.BR109:ScaleTo(10)
+			-- local animationController = workspace.NPCs.TianMaKe:FindFirstChild('AnimationController', true)
+			-- if animationController then
+			-- 	local animation = animationController:FindFirstChild('EventAnimation')
+			-- 	local animator = animationController.Animator
+			-- 	if self.MKTrack == nil then
+			-- 		self.MKTrack = animator:LoadAnimation(animation)
+			-- 		self.MKTrack.Priority = Enum.AnimationPriority.Action
+			-- 		self.MKTrack.Looped = true
+			-- 	end
+			-- 	self.MKTrack:Play()
+			-- end	
 			--#endregion
 			workspace.SceneLogic.MKEvent.ProximityPrompt.Enabled = true
 			self.MKPromptConn = workspace.SceneLogic.MKEvent.ProximityPrompt.Triggered:Connect(MKPrompt)
@@ -90,8 +89,11 @@ local EnumState = {
 			ReplicatedStorage.Remote.MKEvent:FireAllClients(nil)
 			self.MKPromptConn:Disconnect()
 			for _, v in self.MKFoods do v:Destroy() end
-			workspace.NPCs.TianMaKe:ScaleTo(1.8)
-			self.MKTrack:Stop()
+			if self.Fragments then
+				for _, v in self.Fragments do v:Destroy() end
+				self.Fragments = nil
+			end
+			workspace.NPCs.BR109:ScaleTo(1)
 			workspace.SceneLogic.MKEvent.ProximityPrompt.Enabled = false
 		end,
 	},
@@ -230,7 +232,11 @@ function MKPrompt(player)
 	if chk == true then
 		self.IsMut = true
 		ReplicatedStorage.Remote.MKEvent:FireAllClients(nil, self.EventEndTime)
-		ReplicatedStorage.Remote.ServerTip:FireAllClients('Big Mutation Begin!!')
+		ReplicatedStorage.Remote.ServerTip:FireAllClients('Fragment Drop Begin !!!')
+		SpawnFragment()
+
+		self.MKPromptConn:Disconnect()
+		workspace.SceneLogic.MKEvent.ProximityPrompt.Enabled = false
 	else
 		ReplicatedStorage.Remote.MKEvent:FireAllClients(self.Foods)
 	end
@@ -282,6 +288,37 @@ function SpawnEventCash()
 	end
 
 	folder:Destroy()
+end
+
+function ClaimFragmentReward(player)
+	-- TODO: 在這裡指定 Prompt 觸發後給的獎勵
+	-- e.g. shared.DataStore.RewardController.GetItem(player, itemId, amount)
+	-- e.g. ReplicatedStorage.Remote.Loot:FireClient(player, { Items = { [itemId] = amount } })
+end
+
+function SpawnFragment()
+	self.FragmentLeft = 20
+	self.Positions = {}
+	self.Fragments = {}
+
+	local spawnArea = workspace.SceneLogic.EventCashSpawnArea
+	local template = ReplicatedStorage.Assets.Parts.FragmentGacha
+
+	local instances = SpawnInstancesInPart(spawnArea, template, 20, 10)
+	for _, instance in ipairs(instances) do
+		table.insert(self.Fragments, instance)
+		instance:FindFirstChildOfClass('Script').Enabled = true
+		instance.ProximityPrompt.Triggered:Connect(function(player)
+			local list = RewardData.FragmentEvent
+			local itemId = shared.Tool.GachaByDict(list)
+			shared.DataStore.RewardController.GetEventFragments(player, itemId, 1)
+			self.FragmentLeft -= 1
+			if self.FragmentLeft == 0 and self.State.name == 'AlienFeast' then
+				task.delay(5, function() SpawnFragment() end)
+			end
+			instance:Destroy()
+		end)
+	end
 end
 
 function SpawnInstancesInPart(container, template, amount, minDistance)

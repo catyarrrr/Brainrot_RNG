@@ -79,14 +79,16 @@ end
 
 function self:Play(name)
 	local sound = self.Sounds[name]
-	if not sound then return end
+	if not sound then warn('sound not found for name:', name); return end
 
 	sound:Play()
 end
 function self:PlayAsync(name)
-	local sound = self.Sounds[name]:Clone()
+	local sound = self.Sounds[name]
+	if not sound then warn('sound not found for name:', name); return end
+
+	sound = sound:Clone()
 	sound.Parent = SoundService
-	if not sound then return end
 
 	sound:Play()
 	sound.Ended:Connect(function() sound:Destroy() end)
@@ -94,7 +96,7 @@ end
 
 function self:PlayRanAt(name, pos)
 	local list = self.Sounds[name]
-	if not list then return end
+	if not list then warn('sound not found for name:', name); return end
 	
 	local sound = list[math.random(#list)]:Clone()
 	local part = Instance.new('Part')
@@ -115,7 +117,7 @@ end
 
 function self:PlayRan(name)
 	local list = self.Sounds[name]
-	if not list then return end
+	if not list then warn('sound not found for name:', name); return end
 	
 	local sound = list[math.random(#list)]
 
@@ -123,7 +125,10 @@ function self:PlayRan(name)
 end
 
 function self:PlayAt(name, pos, speed)
-	local sound = self.Sounds[name]:Clone()
+	local sound = self.Sounds[name]
+	if not sound then warn('sound not found for name:', name); return end
+
+	sound = sound:Clone()
 	local part = Instance.new('Part')
 	part.Position = pos
 	part.Transparency = 1

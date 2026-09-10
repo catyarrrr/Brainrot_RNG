@@ -26,12 +26,13 @@ local EnumState = {
 		enter = function(self)
 			shared.Area.NextMapEvent:Fire(self.PathId, self.Round, self.Rush)
 			self.Valid = false
-			
-			shared.Thread:Spawn(function()
-				if self.Rush then
-					local levelData = LevelData.GetRushData(self.Round)
-					shared.Enemy.new(self, self.Round, 'Rush', self.PathId, levelData.Health, levelData.Cash)
-				else
+
+			if self.Rush then
+				local levelData = LevelData.GetRushData(self.Round)
+				shared.Enemy.new(self, self.Round, 'Rush', self.PathId, levelData.Health, levelData.Cash)
+				self.Valid = true
+			else
+				shared.Thread:Spawn(function()
 					local levelData = LevelData.GetData(self.Round)
 					
 					for i=1, levelData.Amount do
@@ -44,10 +45,10 @@ local EnumState = {
 					elseif levelData.Boss then
 						shared.Enemy.new(self, self.Round, 'Boss', self.PathId)
 					end
-				end
 
-				self.Valid = true
-			end)
+					self.Valid = true
+				end)
+			end
 		end,
 
 		duration = 0,

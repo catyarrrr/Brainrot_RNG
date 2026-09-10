@@ -11,6 +11,14 @@ raycastParams.FilterType = Enum.RaycastFilterType.Include
 local COMBINE_GEM_COST = { [1] = 1200, [2] = 3000, [3] = 9000, [4] = 12000, [5] = 16000 }
 local self = {}
 
+local function IsGoldMut()
+	local event = shared.ServerEvent
+	if event.State and event.State.name == event.StateDict.GoldMut then
+		return true
+	end
+	return false
+end
+
 function self.SpawnTower(player, uid, towerName, cframe: CFrame, towerUID, gridXY, shapeName)
 	raycastParams.FilterDescendantsInstances = {workspace.Platforms}
 	if not workspace:Raycast(cframe.Position + cframe.UpVector*.2, -cframe.UpVector*1, raycastParams) then warn('can not place here'); return end
@@ -29,7 +37,7 @@ function self.SpawnTower(player, uid, towerName, cframe: CFrame, towerUID, gridX
 		local chk = shared.DataStore.TowerController.Place(player, uid, towerUID, gridXY, shapeName)
 		if chk == false then
 			ReplicatedStorage.Remote.Sound.AlienPlace_Fail:FireClient(player)
-			ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Can not place alien here!!!')
+			ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Can not place Brainrot here!!!')
 			return
 		end
 		local pathId = shared.DataStore.GetPlayerCurPath(player)
@@ -119,7 +127,7 @@ function self.CloneTower(player, uid)
 	local towerEntry = playerData.Tower.Inv[uid]
 	if towerEntry == nil then return end
 	if playerData.Tower.Clone.SourceUID then
-		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Already cloning an Alien')
+		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Already cloning a Brainrot')
 		return
 	end
 
@@ -168,7 +176,7 @@ function self.CompleteClone(player, uid)
 	shared.DataStore.TowerController.ClaimClone(player)
 end
 function self.EvolveTower(player, uid, evoKey)
-	if uid == nil then rs.Remote.ServerWarn:FireClient(player, 'Select an alien !!!'); return end
+	if uid == nil then rs.Remote.ServerWarn:FireClient(player, 'Select a Brainrot !!!'); return end
 	local playerData = shared.DataStore.GetData(player)
 	if playerData == nil then return end
 
@@ -180,7 +188,7 @@ function self.EvolveTower(player, uid, evoKey)
 	if curDict == nil then warn('evoDict fetch error for key:', evoKey); return end
 
 	if playerData.Tower.Evolve.SourceUID then
-		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Already evolving an Alien')
+		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Already evolving a Brainrot')
 		return
 	end
 
@@ -340,11 +348,13 @@ function self.SellTower(player)
 	if staticData == nil or staticData.Cost == nil then rs.Remote.Tower.Sell:FireClient(player, false, 'Alien not found'); return end
 
 	local cash = math.floor(staticData.Cost * rng:NextNumber(.1, 1.5))
+	if IsGoldMut() then cash *= 2 end
 
 	local playerData = shared.DataStore.GetData(player)
 	local towerEntry = playerData and playerData.Tower.Inv[uid]
 	local traitId = towerEntry and towerEntry.Trait
 	local gems = shared.CalculateData.GetSellGems(towerUID, traitId)
+	if IsGoldMut() then gems *= 2 end
 
 	tool:Destroy()
 	shared.BackpackHandler.RemovePlayerBackpackTool(player, uid)
@@ -399,6 +409,7 @@ function self.SellAllTowers(player)
 	local totalCash = 0
 	local totalGems = 0
 	local count = 0
+	local multiplier = IsGoldMut() and 2 or 1
 	local toDelete = {}
 	for uid in uids do
 		local towerUID = shared.DataStore.TowerController.GetTowerUIDByUID(player, uid)
@@ -406,10 +417,10 @@ function self.SellAllTowers(player)
 		local staticData = TowerData.GetData(towerUID)
 		if staticData == nil or staticData.Cost == nil then continue end
 
-		totalCash += math.floor(staticData.Cost * rng:NextNumber(.1, 1.5))
+		totalCash += math.floor(staticData.Cost * rng:NextNumber(.1, 1.5)) * multiplier
 		local towerEntry = playerData.Tower.Inv[uid]
 		local traitId = towerEntry and towerEntry.Trait
-		totalGems += shared.CalculateData.GetSellGems(towerUID, traitId)
+		totalGems += shared.CalculateData.GetSellGems(towerUID, traitId) * multiplier
 		table.insert(toDelete, uid)
 		shared.BackpackHandler.RemovePlayerBackpackTool(player, uid)
 		count += 1

@@ -32,8 +32,8 @@ function self.init()
 	self:RegisterSound('PrayTotem', 'UI')
 	self:RegisterSound('FeedTotem', 'UI')
 
-	self:RegisterSound('LobbyBGM', 'BGM')
-	self:RegisterSound('OP', 'BGM')
+	self:RegisterFolder('LobbyBGM', 'BGM')
+	self:RegisterFolder('BrainrotAction', 'UI')
 
 	RegisterAlienHitSound()
 end
@@ -53,7 +53,7 @@ function self.start()
 	self.TowerHitEvent:Connect(function(self, towerUID, pos)
 		local towerType = TowerData.GetTowerTypeByTowerUID(towerUID)
 		if towerType == nil then return end
-		self:PlayAt('Hit_Tower' .. tostring(towerType), pos)
+		self:PlayAt('Hit_BR' .. tostring(towerType), pos)
 	end, self)
 
 	BGMPLAY()
@@ -100,6 +100,26 @@ function self:RegisterInstance(instance, channel)
 
 end
 
+function self:RegisterFolder(folderName, channel)
+	if not self.Channels[channel] then warn('invalid channel:', channel); return end
+	if self.Sounds[folderName] then warn('sound already registered:', folderName); return end
+
+	local folder = ReplicatedStorage.Assets.Sounds:FindFirstChild(folderName)
+	if folder == nil then warn('folder not found for name:', folderName); return end
+
+	local group = {}
+	for _, child in folder:GetChildren() do
+		if child:IsA('Sound') then
+			local clone = child:Clone()
+			clone.Parent = SoundService
+			table.insert(group, clone)
+		end
+	end
+
+	self.Sounds[folderName] = group
+	self.Channels[channel][folderName] = group
+end
+
 function self:RegisterGroup(name, assetId, channel, volume, looped, minDistance, maxDistance)
 	local sound = Instance.new('Sound')
 	sound.Name = name
@@ -118,14 +138,16 @@ end
 
 function self:Play(name)
 	local sound = self.Sounds[name]
-	if not sound then return end
+	if not sound then warn('sound not found for name:', name); return end
 
 	sound:Play()
 end
 function self:PlayAsync(name)
-	local sound = self.Sounds[name]:Clone()
+	local sound = self.Sounds[name]
+	if not sound then warn('sound not found for name:', name); return end
+
+	sound = sound:Clone()
 	sound.Parent = SoundService
-	if not sound then return end
 
 	sound:Play()
 	sound.Ended:Connect(function() sound:Destroy() end)
@@ -133,7 +155,7 @@ end
 
 function self:PlayRanAt(name, pos)
 	local list = self.Sounds[name]
-	if not list then return end
+	if not list then warn('sound not found for name:', name); return end
 	
 	local sound = list[math.random(#list)]:Clone()
 	local part = Instance.new('Part')
@@ -154,15 +176,35 @@ end
 
 function self:PlayRan(name)
 	local list = self.Sounds[name]
-	if not list then return end
+	if not list then warn('sound not found for name:', name); return end
 	
 	local sound = list[math.random(#list)]
 
 	sound:Play()
 end
 
+function self:PlayGroupSound(groupName, soundName)
+	local group = self.Sounds[groupName]
+	if not group then warn('sound group not found for name:', groupName); return end
+
+	local target : Sound = nil
+	for _, sound : Sound in group do
+		if sound.Name == soundName then target = sound end
+	end
+	if target == nil then return end
+
+	for _, sound : Sound in group do
+		if sound ~= target and sound.IsPlaying then sound:Stop() end
+	end
+
+	target:Play()
+end
+
 function self:PlayAt(name, pos)
-	local sound = self.Sounds[name]:Clone()
+	local sound = self.Sounds[name]
+	if not sound then warn('sound not found for name:', name); return end
+
+	sound = sound:Clone()
 	local part = Instance.new('Part')
 	part.Position = pos
 	part.Transparency = 1
@@ -202,7 +244,7 @@ function self:StopGroup(name)
 end	
 
 function RegisterAlienHitSound()
-	for _, sound in ReplicatedStorage.Assets.Sounds.Aliens:GetChildren() do
+	for _, sound in ReplicatedStorage.Assets.Sounds.BrainrotHit:GetChildren() do
 		if sound:IsA('Sound') then
 			self:RegisterInstance(sound, 'SFX')
 		end
@@ -210,12 +252,24 @@ function RegisterAlienHitSound()
 end
 
 function BGMPLAY()
-	local op : Sound = self.Sounds['OP']
-	op:Play()
-	
-	op.Ended:Connect(function()
-		self:Play('LobbyBGM')
-	end)
+	local list : {Sound} = self.Sounds['LobbyBGM']
+	if not list or #list == 0 then warn('no BGM sounds in folder: LobbyBGM'); return end
+
+	local lastPlayed : Sound = nil
+
+	local function playNext()
+		local bgm : Sound
+		repeat
+			bgm = list[math.random(#list)]
+		until #list <= 1 or bgm ~= lastPlayed
+
+		lastPlayed = bgm
+		bgm:Play()
+
+		bgm.Ended:Once(playNext)
+	end
+
+	playNext()
 end
 
 return self

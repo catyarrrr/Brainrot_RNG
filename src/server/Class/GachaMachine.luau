@@ -110,7 +110,7 @@ function Class:Gacha(player)
         table.insert(towers, SummonData.Gacha(luck, key, vipMut))
     end
 
-    print(towers)
+    -- print(towers)
     --  事件影响突变
     if shared.ServerEvent.IsMut and shared.ServerEvent.IsMut == true then
         local gachaDict
@@ -119,17 +119,17 @@ function Class:Gacha(player)
         else
             gachaDict = table.clone(SummonData.Datas.MutationDict)
         end
-        if shared.ServerEvent.State.name == shared.ServerEvent.StateDict.GoldMut then
+        if shared.ServerEvent.State.name == shared.ServerEvent.StateDict.DiamondMut then
             gachaDict[2] += 1000
-        elseif shared.ServerEvent.State.name == shared.ServerEvent.StateDict.DiamondMut then
             gachaDict[3] += 500
-        elseif shared.ServerEvent.State.name == shared.ServerEvent.StateDict.AlienFeast then
-            gachaDict[2] += 500
-            gachaDict[3] += 500
-            gachaDict[4] += 500
+            gachaDict[4] += 50
+        -- elseif shared.ServerEvent.State.name == shared.ServerEvent.StateDict.AlienFeast then
+        --     gachaDict[2] += 500
+        --     gachaDict[3] += 500
+        --     gachaDict[4] += 500
         end
 
-        -- print(gachaDict)
+        print(gachaDict)
 
         for k, v in towers do
             local curMutId = math.floor(v/100)%100

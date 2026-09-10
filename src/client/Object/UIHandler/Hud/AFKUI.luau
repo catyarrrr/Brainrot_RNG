@@ -34,7 +34,8 @@ function self.Update(playerData)
     self.AFKFrame.Visible = true
 
     local offlineReward = playerData.States.OfflineReward
-    self.AFKDataPanel.Desc.Desc.Text = string.format('Claim offline rewards (%dh %dm)', math.floor(offlineReward.TotalMin / 60), offlineReward.TotalMin % 60)
+    local totalMin = offlineReward.TotalMin or 0
+    self.AFKDataPanel.Desc.Desc.Text = string.format('Claim offline rewards (%dh %dm)', math.floor(totalMin / 60), totalMin % 60)
     self.AFKDataPanel.Cash.TextLabel.Text = FormatNumber(offlineReward.Cash)
 
     for _, slot in self.AFKDataPanel.Item:GetChildren() do

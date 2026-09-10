@@ -68,7 +68,7 @@ function self.Init(main)
 
     self.BossBtn.Button.MouseButton1Click:Connect(function()
         local playerData = shared.PlayerDataHandler.GetData()
-        if playerData.Profile.MaxLevel < 150 then shared.UIHandler.ServerWarn('Reach wave 150 to unlock Boss Challenge'); return end
+        if playerData.Profile.MaxLevel < 300 then shared.UIHandler.ServerWarn('Reach wave 300 to unlock Boss Challenge'); return end
 
         shared.UIHandler.TriggerRushEvent:Fire()
     end)

@@ -93,10 +93,10 @@ function Class.new(model)
 	self.DPSGui.DPS.Text = '0'
 
 	-- totem
-	self.TotemModel = ServerStorage.Totem:Clone()
-	shared.VFXHandler.DisableParticle(self.TotemModel.TriggerEffect)
-	self.TotemModel:PivotTo(self.TotemCF)
-	self.TotemModel.Parent = model
+	-- self.TotemModel = ServerStorage.Totem:Clone()
+	-- shared.VFXHandler.DisableParticle(self.TotemModel.TriggerEffect)
+	-- self.TotemModel:PivotTo(self.TotemCF)
+	-- self.TotemModel.Parent = model
 	--
 
 	WaitForGachaMachine(self)
@@ -137,11 +137,11 @@ function Class:Enter(data, plr)
 	self.MaxChallenge = data.Profile.MaxChallenge
 	self.OwnerFrame.BossChallenge.Text = string.format('Boss Challenge: %d', self.MaxChallenge)
 
-	local equippedTotems = {}
-	if data.Totem then
-		equippedTotems = shared.DataStore.TotemController.GetEquippedSlots(plr)
-	end
-	self:UpdateTotem(equippedTotems)
+	-- local equippedTotems = {}
+	-- if data.Totem then
+	-- 	equippedTotems = shared.DataStore.TotemController.GetEquippedSlots(plr)
+	-- end
+	-- self:UpdateTotem(equippedTotems)
 
 	if self.GachaMachine then
 		self.GachaMachine:Enter(plr)
@@ -281,7 +281,7 @@ function Class:Reset()
 
 	if self.GachaMachine then self.GachaMachine:Reset() end
 
-	self:UpdateTotem(nil)
+	-- self:UpdateTotem(nil)
 
 	self:SwitchMap(1)
 	self.Level = nil
