@@ -1,10 +1,16 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
 local ItemData = require(ReplicatedStorage.Datas.ItemData :: ModuleScript)
 
 local TriggerSelectFrame = nil
 local self : any = {}
+
+local function GetCloneField(slot, field)
+    if slot == 2 then return field .. '2' end
+    return field
+end
 
 function self.Init(frame)
 	self.Main = shared.Frame.new(frame.Menu.CloneMachine)
@@ -15,6 +21,10 @@ function self.Init(frame)
     self.SelectFrame.Visible = false
     self.SelectBtn = self.Frame.SelectBtn
     self.TimeBtn = self.Frame.TimeBtn
+    self.NormalSlotBtn = self.Frame.Slot1Btn
+    self.BasicGradient = self.Frame.AutoRollBG.BasicGradient
+    self.PremiumGradient = self.Frame.AutoRollBG.PremiumGradient
+    self.PremiumSlotBtn = self.Frame.Slot2Btn
     self.CloneBtn = self.Frame.CloneBtn
     self.ClaimBtn = self.Frame.ClaimBtn
     self.SlotTemplate = self.Frame.SlotTemplate
@@ -22,18 +32,31 @@ function self.Init(frame)
     self.CashLabel = self.Frame.CashCount.CashLabel
     self.ScrollingFrame = self.SelectFrame.ScrollingFrame
     self.Tips = self.Frame.Tips
+    self.Slot = 1
+    self.Lock = self.PremiumSlotBtn.Lock
+    self.PremiumSlotRemote = ReplicatedStorage.Remote.Tower.PremiumSlot
+    self:UpdateGradient()
+    self:UpdateLock(shared.PlayerDataHandler.GetData())
 
     self.TimeBtn.MouseButton1Click:Connect(function()
         shared.BuyHandler.BuyProduct(shared.ProductDatas['-50%Time_Clone'])
     end)
     self.Frame.ClaimBtn.MouseButton1Click:Connect(function()
-        ReplicatedStorage.Remote.Tower.CompleteClone:FireServer(self.Selected)
+        ReplicatedStorage.Remote.Tower.CompleteClone:FireServer(self.Selected, self.Slot)
     end)
     self.Frame.CloneBtn.MouseButton1Click:Connect(function()
-        ReplicatedStorage.Remote.Tower.TowerClone:FireServer(self.Selected)
+        ReplicatedStorage.Remote.Tower.TowerClone:FireServer(self.Selected, self.Slot)
     end)
     self.Frame.SelectBtn.MouseButton1Click:Connect(function()
         TriggerSelectFrame()
+    end)
+    self.NormalSlotBtn.MouseButton1Click:Connect(function()
+        shared.SoundHandler:Play('UI_Success')
+        self:SwitchSlot(1)
+    end)
+    self.PremiumSlotBtn.MouseButton1Click:Connect(function()
+        shared.SoundHandler:Play('UI_Success')
+        self:SwitchSlot(2)
     end)
     self.SelectFrame.Title.Close.MouseButton1Click:Connect(function()
         shared.SoundHandler:Play('UI_Fail')
@@ -44,11 +67,70 @@ function self.Init(frame)
     end)
 end
 
+function self:SwitchSlot(slot)
+    if self.Slot == slot then return end
+
+    if slot == 2 then
+        local playerData = shared.PlayerDataHandler.GetData()
+        if playerData == nil then return end
+        if playerData.VIP == nil or playerData.VIP.CloneSlot ~= true then
+            local gems = playerData.Coin and playerData.Coin.Gems or 0
+            if gems >= shared.Config.CLONE_SLOT_GEM_COST then
+                self.PremiumSlotRemote:FireServer()
+            else
+                shared.UIHandler.ServerWarn('Unlock the Premium Clone Slot with the pass or 100k Gems!')
+                shared.BuyHandler.BuyPass(shared.ProductDatas.PASSID_CLONESLOT)
+                return
+            end
+        end
+    end
+
+    self.Slot = slot
+    self.Selected = nil
+    self.Countdown = false
+    self:UpdateGradient()
+    self:PlayGradientRotation()
+
+    local playerData = shared.PlayerDataHandler.GetData()
+    if playerData then self.Update(playerData) end
+end
+
+function self:UpdateGradient()
+    if self.BasicGradient then self.BasicGradient.Enabled = (self.Slot == 1) end
+    if self.PremiumGradient then self.PremiumGradient.Enabled = (self.Slot == 2) end
+end
+
+function self:UpdateLock(playerData)
+    if self.Lock == nil then return end
+    local unlocked = playerData ~= nil and playerData.VIP ~= nil and playerData.VIP.CloneSlot == true
+    self.Lock.Visible = not unlocked
+    if self.PremiumSlotBtn.ONText then self.PremiumSlotBtn.ONText.Visible = unlocked end
+end
+
+function self:PlayGradientRotation()
+    local gradient = self.Slot == 1 and self.BasicGradient or self.PremiumGradient
+    if gradient == nil then return end
+
+    if self.GradientTween then
+        self.GradientTween:Cancel()
+        self.GradientTween = nil
+    end
+
+    gradient.Rotation = 0
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    self.GradientTween = TweenService:Create(gradient, tweenInfo, {Rotation = 360})
+    self.GradientTween:Play()
+end
+
 function self.Update(playerData)
     self.Countdown = false
+    self:UpdateLock(playerData)
     local cloneData = playerData.Tower.Clone
-    if cloneData.SourceUID then
-        self.Selected = cloneData.SourceUID
+    local sourceUID = cloneData[GetCloneField(self.Slot, 'SourceUID')]
+    local endTime = cloneData[GetCloneField(self.Slot, 'EndTime')]
+
+    if sourceUID then
+        self.Selected = sourceUID
         self.Cloning = true
         self.CloneBtn.Visible = false
         self.ClaimBtn.Visible = true
@@ -67,9 +149,9 @@ function self.Update(playerData)
         if towerStaticData == nil then return end
         local qualityData = TowerData.GetQualityDictByTowerUID(towerData.TowerUID)
 
-        if cloneData.SourceUID then
+        if sourceUID then
             self.Frame.CashCount.Visible = false
-            self.StartTick(cloneData)
+            self.StartTick(endTime)
         else
             self.Frame.CashCount.Visible = true
 
@@ -94,7 +176,7 @@ function self.Update(playerData)
         slot.Size = self.SlotTemplate.Size
         slot.Position = self.SlotTemplate.Position
         slot.MouseButton1Click:Connect(function()
-            if cloneData.SourceUID then return end
+            if sourceUID then return end
             shared.SoundHandler:Play('UI_Success')
             TriggerSelectFrame()
         end)
@@ -108,18 +190,18 @@ function self.Update(playerData)
     end
 end 
 
-function self.StartTick(cloneData)
+function self.StartTick(endTime)
     if self.CountdownTask then
         task.cancel(self.CountdownTask)
         self.CountdownTask = nil
     end
         
-    local remaining = cloneData.EndTime - workspace:GetServerTimeNow()
+    local remaining = endTime - workspace:GetServerTimeNow()
     if remaining > 0 then
         self.Countdown = true
         self.CountdownTask = task.spawn(function()
             while self.Countdown do
-                local r = cloneData.EndTime - workspace:GetServerTimeNow()
+                local r = endTime - workspace:GetServerTimeNow()
                 if r <= 0 then
                     self.Tips.Text = 'Clone complete!'
                     self.Countdown = false
@@ -135,6 +217,8 @@ function self.StartTick(cloneData)
 end
 
 function self:Open()
+    self:UpdateGradient()
+    self:UpdateLock(shared.PlayerDataHandler.GetData())
     self.Main:TweenOpen()
 end
 function self:Close()

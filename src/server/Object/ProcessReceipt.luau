@@ -188,6 +188,8 @@ function self.start()
 			shared.DataStore.GachaController.BuyPass(player, 'AutoMerge')
 		elseif wasPurchased and passID == shared.ProductDatas.PASSID_TOTEMSLOT then
 			shared.DataStore.TotemController.UnlockTotemSlot(player)
+		elseif wasPurchased and passID == shared.ProductDatas.PASSID_CLONESLOT then
+			shared.DataStore.TowerController.UnlockCloneSlot(player)
 		end
 	end)
 end 

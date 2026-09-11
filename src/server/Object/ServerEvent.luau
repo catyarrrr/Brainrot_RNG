@@ -290,35 +290,36 @@ function SpawnEventCash()
 	folder:Destroy()
 end
 
-function ClaimFragmentReward(player)
-	-- TODO: 在這裡指定 Prompt 觸發後給的獎勵
-	-- e.g. shared.DataStore.RewardController.GetItem(player, itemId, amount)
-	-- e.g. ReplicatedStorage.Remote.Loot:FireClient(player, { Items = { [itemId] = amount } })
-end
-
 function SpawnFragment()
-	self.FragmentLeft = 20
+	self.FragmentLeft = 0
 	self.Positions = {}
 	self.Fragments = {}
 
 	local spawnArea = workspace.SceneLogic.EventCashSpawnArea
-	local template = ReplicatedStorage.Assets.Parts.FragmentGacha
+	local folder = ReplicatedStorage.Assets.Parts.EventFragments:Clone()
+	for k, v in pairs(folder:GetChildren()) do
+		local amount = v:GetAttribute('Amount')
+		local count = v:GetAttribute('Count')
 
-	local instances = SpawnInstancesInPart(spawnArea, template, 20, 10)
-	for _, instance in ipairs(instances) do
-		table.insert(self.Fragments, instance)
-		instance:FindFirstChildOfClass('Script').Enabled = true
-		instance.ProximityPrompt.Triggered:Connect(function(player)
-			local list = RewardData.FragmentEvent
-			local itemId = shared.Tool.GachaByDict(list)
-			shared.DataStore.RewardController.GetEventFragments(player, itemId, 1)
-			self.FragmentLeft -= 1
-			if self.FragmentLeft == 0 and self.State.name == 'SixSevenFeast' then
-				task.delay(5, function() SpawnFragment() end)
-			end
-			instance:Destroy()
-		end)
+		local instances = SpawnInstancesInPart(spawnArea, v, amount, 10)
+		for _, instance in ipairs(instances) do
+			table.insert(self.Fragments, instance)
+			self.FragmentLeft += 1
+			instance:FindFirstChildOfClass('Script').Enabled = true
+			instance.ProximityPrompt.Triggered:Connect(function(player)
+				local list = RewardData.FragmentEvent
+				local itemId = shared.Tool.GachaByDict(list)
+				shared.DataStore.RewardController.GetEventFragments(player, itemId, count)
+				self.FragmentLeft -= 1
+				if self.FragmentLeft == 0 and self.State.name == 'SixSevenFeast' then
+					task.delay(5, function() SpawnFragment() end)
+				end
+				instance:Destroy()
+			end)
+		end
 	end
+
+	folder:Destroy()
 end
 
 function SpawnInstancesInPart(container, template, amount, minDistance)

@@ -129,32 +129,42 @@ function GenerateTowerVisual(tool, towerUID)
 
 	local assetId = TowerData.GetAssetIdByTowerUID(towerUID)
 	local model = ReplicatedStorage.Assets.Towers:FindFirstChild(AssetsData[assetId].Model)
-    local clone = model:Clone()
+	if model == nil then warn('tower model not found:', AssetsData[assetId].Model); return end
+	local clone = model:Clone()
 	local towerData = TowerData.GetData(towerUID)
-	
+
 	shared.VFXHandler.GenerateMutParticle(clone, TowerData.GetMutIdByTowerUID(towerUID))
-    for _, child in clone:GetDescendants() do
-		if child:IsA('BasePart') then
-			child.Anchored = false
-			child.Massless = true
-			child.CanCollide = false
-			
-			if child ~= clone.PrimaryPart then
-				local weld = Instance.new('WeldConstraint')
-				weld.Part0 = clone.PrimaryPart
-				weld.Part1 = child
-				weld.Parent = child
-			end
+
+	-- 背包里的塔只是纯展示模型，装备期间不会播放动画，不需要保留 Motor6D 骨架。
+	-- 一旦保留内部关节，再给每个部件加 WeldConstraint 就会和关节组成冲突约束，
+	-- 把角色拖到模型默认位置并锁住（部分塔模型有 anchored 部件时尤其明显）。
+	-- 因此：先拆掉所有关节，再取消 anchored，移动到 Handle，最后把每个部件刚性焊到 Handle。
+	for _, descendant in clone:GetDescendants() do
+		if descendant:IsA('JointInstance') or descendant:IsA('WeldConstraint') then
+			descendant:Destroy()
 		end
 	end
+
+	for _, descendant in clone:GetDescendants() do
+		if descendant:IsA('BasePart') then
+			descendant.Anchored = false
+			descendant.Massless = true
+			descendant.CanCollide = false
+			descendant.CanQuery = false
+		end
+	end
+
 	clone:PivotTo(handle.CFrame)
-	
-	
-	local weld = Instance.new('WeldConstraint')
-	weld.Part1 = clone.PrimaryPart	
-	weld.Part0 = handle
-	weld.Parent = handle
-	
+
+	for _, descendant in clone:GetDescendants() do
+		if descendant:IsA('BasePart') then
+			local weld = Instance.new('WeldConstraint')
+			weld.Part0 = handle
+			weld.Part1 = descendant
+			weld.Parent = handle
+		end
+	end
+
 	shared.VFXHandler.GenerateTowerGui(clone, towerData)
 	
 	clone.Parent = tool

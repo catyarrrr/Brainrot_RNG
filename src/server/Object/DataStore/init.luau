@@ -385,6 +385,7 @@ function UpdatePlayerPasses(player)
         [shared.ProductDatas.PASSID_FASTROLL] = { vip = 'FastRoll', handler = function() shared.DataStore.GachaController.BuyPass(player, 'FastRoll') end },
         [shared.ProductDatas.PASSID_AUTOMERGE] = { vip = 'AutoMerge', handler = function() shared.DataStore.GachaController.BuyPass(player, 'AutoMerge') end },
         [shared.ProductDatas.PASSID_TOTEMSLOT] = { vip = 'TotemSlot', handler = function() shared.DataStore.TotemController.UnlockTotemSlot(player) end },
+        [shared.ProductDatas.PASSID_CLONESLOT] = { vip = 'CloneSlot', handler = function() shared.DataStore.TowerController.UnlockCloneSlot(player) end },
     }
 
     for passId, entry in passMap do

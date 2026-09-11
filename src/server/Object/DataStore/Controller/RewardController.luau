@@ -37,14 +37,15 @@ function self.BuyFragments(player, itemId)
     self.SetPlayerData(player, 'Item')
     ReplicatedStorage.Remote.Loot:FireClient(player, { Items = { [itemId] = 10 } })
 end
-function self.GetEventFragments(player, itemId)
+function self.GetEventFragments(player, itemId, amount)
     local tarData = self.GetData(player)
     if not tarData then return end
 
-    self.ItemModule.AddItem(tarData.Item, itemId, 1)
+    amount = amount or 1
+    self.ItemModule.AddItem(tarData.Item, itemId, amount)
 
     self.SetPlayerData(player, 'Item')
-    ReplicatedStorage.Remote.Loot:FireClient(player, { Items = { [itemId] = 1 } })
+    ReplicatedStorage.Remote.Loot:FireClient(player, { Items = { [itemId] = amount } })
 end
 
 function self.EnemyDrop(player, itemIds)

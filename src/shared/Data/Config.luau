@@ -24,4 +24,5 @@ return {
     UPGRADE_MAXLUCK = 3,
 
     TRAIT_ID = 101,
+    CLONE_SLOT_GEM_COST = 100000,
 }

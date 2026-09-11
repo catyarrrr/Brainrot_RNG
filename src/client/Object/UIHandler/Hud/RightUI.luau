@@ -1,6 +1,3 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TopBar = require(ReplicatedStorage.TopBar :: ModuleScript)
-
 local self : any = {}
 
 function self.Init(main)
@@ -50,23 +47,6 @@ function self.UpdateVIP(vipData)
 	else
 		self.RightFrame.LegendaryBundle.Visible = false
 		self.RightFrame.StarterPack.Visible = true
-	end
-end
-
-function self.TopBarInit(playerData)
-	self.AnnouncementsTopBar = TopBar.new()
-	self.AnnouncementsTopBar:setImage('rbxassetid://77225270')
-	self.AnnouncementsTopBar:setImageScale(.8)
-	self.AnnouncementsTopBar:bindEvent('selected', function()
-		self.Announcements.Visible = true
-		self.AnnouncementsTopBar:clearNotices()
-	end)
-	self.AnnouncementsTopBar:bindEvent('deselected', function()
-		self.Announcements.Visible = false
-	end)
-
-	if playerData.States.PlaceVersion ~= game.PlaceVersion then
-		self.AnnouncementsTopBar:notify()
 	end
 end
 

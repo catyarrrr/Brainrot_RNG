@@ -245,13 +245,22 @@ function self.BuyStarterPack(player)
     self.SetPlayerData(player, 'VIP')
 end
 
-function self.BuyCloneTime(player)
+function self.BuyCloneTime(player, slot)
     local tarData = self.GetData(player)
     if not tarData then return end
 
     local cloneData = tarData.Tower.Clone
-    local remaining = cloneData.EndTime - workspace:GetServerTimeNow()
-    cloneData.EndTime = workspace:GetServerTimeNow() + remaining / 2
+    local slots = slot and {slot} or {1, 2}
+    for _, s in slots do
+        local sourceField = s == 2 and 'SourceUID2' or 'SourceUID'
+        local endTimeField = s == 2 and 'EndTime2' or 'EndTime'
+        if cloneData[sourceField] then
+            local remaining = cloneData[endTimeField] - workspace:GetServerTimeNow()
+            if remaining > 0 then
+                cloneData[endTimeField] = workspace:GetServerTimeNow() + remaining / 2
+            end
+        end
+    end
 
     self.SetPlayerData(player, 'Clone')
 end
@@ -272,11 +281,13 @@ function self.RepairCloneEvolve(player)
     if not tarData then return end
 
     local towerData = tarData.Tower
-    local cloneSource = towerData.Clone and towerData.Clone.SourceUID
+    local cloneData = towerData.Clone
+    local cloneSource = cloneData and cloneData.SourceUID
+    local cloneSource2 = cloneData and cloneData.SourceUID2
     local evolveSource = towerData.Evolve and towerData.Evolve.SourceUID
 
     for uid, entry in towerData.Inv do
-        if entry.Cloning and cloneSource ~= uid then
+        if entry.Cloning and cloneSource ~= uid and cloneSource2 ~= uid then
             entry.Cloning = nil
         end
         if entry.IsEvolving and evolveSource ~= uid then
@@ -285,12 +296,35 @@ function self.RepairCloneEvolve(player)
     end
 end
 
-function self.StartClone(player, uid)
+function self.UnlockCloneSlot(player)
+    local tarData = self.GetData(player)
+    if not tarData then return false end
+    if tarData.VIP.CloneSlot == true then return true end
+
+    tarData.VIP.CloneSlot = true
+    self.SetPlayerData(player, {'VIP', 'Clone'})
+    return true
+end
+
+function self.UnlockCloneSlotByGems(player)
+    local tarData = self.GetData(player)
+    if not tarData then return false end
+    if tarData.VIP.CloneSlot == true then return true end
+
+    shared.DataStore.CoinController.ConsumeGems(player, shared.Config.CLONE_SLOT_GEM_COST)
+
+    tarData.VIP.CloneSlot = true
+    self.SetPlayerData(player, {'VIP', 'Clone'})
+    return true
+end
+
+function self.StartClone(player, uid, slot)
     local tarData = self.GetData(player)
     if not tarData then return end
 
     local towerEntry = tarData.Tower.Inv[uid]
     if towerEntry == nil then return end
+    if towerEntry.Cloning then return end
 
     local towerUID = towerEntry.TowerUID
     local qualityData = TowerData.GetQualityDictByTowerUID(towerUID)
@@ -309,19 +343,25 @@ function self.StartClone(player, uid)
     self.TowerModule.UnEquip(tarData.Tower, uid)
     shared.BackpackHandler.RemovePlayerBackpackTool(player, uid)
 
-    self.TowerModule.StartClone(tarData.Tower, uid, endTime)
+    self.TowerModule.StartClone(tarData.Tower, uid, endTime, slot)
     self.SetPlayerData(player, 'Clone')
 end
-function self.ClaimClone(player)
+function self.ClaimClone(player, slot)
     local tarData = self.GetData(player)
     if not tarData then return end
 
-    if not self.TowerModule.CheckClone(tarData.Tower) then return end
+    if not self.TowerModule.CheckClone(tarData.Tower, slot) then return end
 
     local newUID = HttpService:GenerateGUID(false)
-    local resultUID, towerUID = self.TowerModule.CompleteClone(tarData.Tower, newUID)
+    local resultUID, towerUID, sourceUID = self.TowerModule.CompleteClone(tarData.Tower, newUID, slot)
     if resultUID then
         shared.BackpackHandler.AddPlayerBackpackTool(player, resultUID)
+
+        if sourceUID and tarData.Tower.Inv[sourceUID] then
+            tarData.Tower.Inv[sourceUID].IsTool = true
+            shared.BackpackHandler.AddPlayerBackpackTool(player, sourceUID)
+        end
+
         self.SetPlayerData(player, 'CloneCompleted')
 
         ReplicatedStorage.Remote.Loot:FireClient(player, {Tower = towerUID})

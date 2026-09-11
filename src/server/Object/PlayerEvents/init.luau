@@ -56,6 +56,8 @@ function self.start()
 	rs.Remote.PlayerClaimOfflineReward.OnServerEvent:Connect(self.RewardHandler.ClaimOfflineReward)
 	rs.Remote.PlayerClaimLoginReward.OnServerEvent:Connect(self.RewardHandler.ClaimLoginReward)
 	rs.Remote.PlayerClaimWeeklyLoginReward.OnServerEvent:Connect(self.RewardHandler.ClaimWeeklyDaily)
+
+	rs.Remote.Tower.PremiumSlot.OnServerEvent:Connect(self.TowerHandler.UnlockCloneSlot)
 end
 
 return self

@@ -5,6 +5,11 @@ local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local CollectTower = nil
 local self = {}
 
+local function GetCloneField(slot, field)
+    if slot == 2 then return field .. '2' end
+    return field
+end
+
 function self.init()
     
 end
@@ -118,16 +123,21 @@ function self.UnEquip(towerData, uid)
     tarData.IsTool = false
 end
 
-function self.StartClone(towerData, uid, endTime)
+function self.StartClone(towerData, uid, endTime, slot)
     local tarData = towerData.Inv[uid]
     if tarData == nil then return false end
     if tarData.Cloning then return false end
 
+    slot = slot or 1
+    local cloneData = towerData.Clone
+    if cloneData == nil then
+        cloneData = {SourceUID = false, EndTime = 0, SourceUID2 = false, EndTime2 = 0}
+        towerData.Clone = cloneData
+    end
+
     tarData.Cloning = true
-    towerData.Clone = {
-        SourceUID = uid,
-        EndTime = endTime,
-    }
+    cloneData[GetCloneField(slot, 'SourceUID')] = uid
+    cloneData[GetCloneField(slot, 'EndTime')] = endTime
     return true
 end
 
@@ -176,21 +186,32 @@ function self.CompleteEvolve(towerData)
     return sourceUID, sourceData.TowerUID
 end
 
-function self.CheckClone(towerData)
+function self.CheckClone(towerData, slot)
     local cloneData = towerData.Clone
-    if cloneData == nil or cloneData.SourceUID == false then return false end
+    if cloneData == nil then return false end
 
-    return workspace:GetServerTimeNow() >= cloneData.EndTime
+    slot = slot or 1
+    local sourceUID = cloneData[GetCloneField(slot, 'SourceUID')]
+    if sourceUID == false or sourceUID == nil then return false end
+
+    return workspace:GetServerTimeNow() >= cloneData[GetCloneField(slot, 'EndTime')]
 end
 
-function self.CompleteClone(towerData, newUID)
+function self.CompleteClone(towerData, newUID, slot)
     local cloneData = towerData.Clone
-    if cloneData == nil or cloneData.SourceUID == false then return end
+    if cloneData == nil then return end
 
-    local sourceUID = cloneData.SourceUID
+    slot = slot or 1
+    local sourceField = GetCloneField(slot, 'SourceUID')
+    local endTimeField = GetCloneField(slot, 'EndTime')
+
+    local sourceUID = cloneData[sourceField]
+    if sourceUID == false or sourceUID == nil then return end
+
     local sourceData = towerData.Inv[sourceUID]
     if sourceData == nil then
-        towerData.Clone = {SourceUID = false, EndTime = 0}
+        cloneData[sourceField] = false
+        cloneData[endTimeField] = 0
         return
     end
 
@@ -199,9 +220,10 @@ function self.CompleteClone(towerData, newUID)
 
     self.AddTower(towerData, sourceData.TowerUID, newUID)
 
-    towerData.Clone = {SourceUID = false, EndTime = 0}
+    cloneData[sourceField] = false
+    cloneData[endTimeField] = 0
 
-    return newUID, sourceData.TowerUID
+    return newUID, sourceData.TowerUID, sourceUID
 end
 
 function CollectTower(towerData, towerUID)

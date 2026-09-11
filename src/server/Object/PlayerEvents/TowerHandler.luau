@@ -120,13 +120,35 @@ function self.TraitTower(player, uid, isX5)
 	shared.DataStore.CoinController.Consume(player, qualityData.TraitCost[1])
 	shared.DataStore.TowerController.Trait(player, uid, key, rollCount)
 end
-function self.CloneTower(player, uid)
+function self.UnlockCloneSlot(player)
+	local playerData = shared.DataStore.GetData(player)
+	if playerData == nil then return end
+	if playerData.VIP.CloneSlot == true then return end
+
+	if shared.DataStore.CoinController.CheckGems(player, shared.Config.CLONE_SLOT_GEM_COST) == false then
+		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Not enough Gems!')
+		return
+	end
+
+	shared.DataStore.TowerController.UnlockCloneSlotByGems(player)
+end
+function self.CloneTower(player, uid, slot)
 	local playerData = shared.DataStore.GetData(player)
 	if playerData == nil then return end
 
+	slot = slot or 1
+	if slot == 2 and (playerData.VIP == nil or playerData.VIP.CloneSlot ~= true) then
+		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Premium Clone Slot is locked')
+		return
+	end
 	local towerEntry = playerData.Tower.Inv[uid]
 	if towerEntry == nil then return end
-	if playerData.Tower.Clone.SourceUID then
+	if towerEntry.Cloning then
+		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Already cloning a Brainrot')
+		return
+	end
+	local sourceField = slot == 2 and 'SourceUID2' or 'SourceUID'
+	if playerData.Tower.Clone[sourceField] then
 		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Already cloning a Brainrot')
 		return
 	end
@@ -154,26 +176,29 @@ function self.CloneTower(player, uid)
 		return
 	end
 
-	shared.DataStore.TowerController.StartClone(player, uid)
+	shared.DataStore.TowerController.StartClone(player, uid, slot)
 
 	shared.SoundHandler:PlayAtPlayer('AlienClone', player)
 end
-function self.CompleteClone(player, uid)
+function self.CompleteClone(player, uid, slot)
 	local playerData = shared.DataStore.GetData(player)
 	if playerData == nil then return end
 
+	slot = slot or 1
 	local cloneData = playerData.Tower.Clone
-	if cloneData.SourceUID == false then
+	local sourceField = slot == 2 and 'SourceUID2' or 'SourceUID'
+	local endTimeField = slot == 2 and 'EndTime2' or 'EndTime'
+	if cloneData[sourceField] == false then
 		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'No clone in progress')
 		return
 	end
 
-	if workspace:GetServerTimeNow() < cloneData.EndTime then
+	if workspace:GetServerTimeNow() < cloneData[endTimeField] then
 		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Clone is not complete yet')
 		return
 	end
 
-	shared.DataStore.TowerController.ClaimClone(player)
+	shared.DataStore.TowerController.ClaimClone(player, slot)
 end
 function self.EvolveTower(player, uid, evoKey)
 	if uid == nil then rs.Remote.ServerWarn:FireClient(player, 'Select a Brainrot !!!'); return end
@@ -347,8 +372,12 @@ function self.SellTower(player)
 	local staticData = TowerData.GetData(towerUID)
 	if staticData == nil or staticData.Cost == nil then rs.Remote.Tower.Sell:FireClient(player, false, 'Alien not found'); return end
 
-	local cash = math.floor(staticData.Cost * rng:NextNumber(.1, 1.5))
-	if IsGoldMut() then cash *= 2 end
+	local cash
+	if IsGoldMut() then
+		cash = math.floor(staticData.Cost * rng:NextNumber(.5, 2))
+	else
+		cash = math.floor(staticData.Cost * rng:NextNumber(.1, 1.5))
+	end
 
 	local playerData = shared.DataStore.GetData(player)
 	local towerEntry = playerData and playerData.Tower.Inv[uid]
@@ -379,13 +408,20 @@ function self.EstimateTower(player)
 	local staticData = TowerData.GetData(towerUID)
 	if staticData == nil or staticData.Cost == nil then rs.Remote.Tower.Estimate:FireClient(player, false, 'Alien not found'); return end
 
-	local cashMin = math.floor(staticData.Cost * 0.1)
-	local cashMax = math.floor(staticData.Cost * 1.5)
+	local cashMin, cashMax
 
 	local playerData = shared.DataStore.GetData(player)
 	local towerEntry = playerData and playerData.Tower.Inv[uid]
 	local traitId = towerEntry and towerEntry.Trait
 	local gems = shared.CalculateData.GetSellGems(towerUID, traitId)
+	if IsGoldMut() then
+		cashMin = math.floor(staticData.Cost * 0.5)
+		cashMax = math.floor(staticData.Cost * 2)
+		gems *= 2
+	else
+		cashMin = math.floor(staticData.Cost * 0.1)
+		cashMax = math.floor(staticData.Cost * 1.5)
+	end
 
 	rs.Remote.Tower.Estimate:FireClient(player, true, gems, cashMin, cashMax)
 end
@@ -417,7 +453,11 @@ function self.SellAllTowers(player)
 		local staticData = TowerData.GetData(towerUID)
 		if staticData == nil or staticData.Cost == nil then continue end
 
-		totalCash += math.floor(staticData.Cost * rng:NextNumber(.1, 1.5)) * multiplier
+		if IsGoldMut() then
+			totalCash += math.floor(staticData.Cost * rng:NextNumber(.5, 2))
+		else
+			totalCash += math.floor(staticData.Cost * rng:NextNumber(.1, 1.5))
+		end
 		local towerEntry = playerData.Tower.Inv[uid]
 		local traitId = towerEntry and towerEntry.Trait
 		totalGems += shared.CalculateData.GetSellGems(towerUID, traitId) * multiplier

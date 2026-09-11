@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SocialService = game:GetService("SocialService")
 local TweenService = game:GetService("TweenService")
+local TopBar = require(ReplicatedStorage.TopBar :: ModuleScript)
 local TempData = require(ReplicatedStorage.Datas.TempData :: ModuleScript)
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local ItemData = require(ReplicatedStorage.Datas.ItemData :: ModuleScript)
@@ -167,6 +168,23 @@ function self.ServerWarn(text, pos)
 	end)
 end
 
+function self.TopBarInit(playerData)
+	self.AnnouncementsTopBar = TopBar.new()
+	self.AnnouncementsTopBar:setImage('rbxassetid://77225270')
+	self.AnnouncementsTopBar:setImageScale(.8)
+	self.AnnouncementsTopBar:bindEvent('selected', function()
+		self.Announcements.Visible = true
+		self.AnnouncementsTopBar:clearNotices()
+	end)
+	self.AnnouncementsTopBar:bindEvent('deselected', function()
+		self.Announcements.Visible = false
+	end)
+
+	if playerData.States.PlaceVersion ~= game.PlaceVersion then
+		self.AnnouncementsTopBar:notify()
+	end
+end
+
 function UIInit()
 	if self.Initiated == true then return end
 	self.Initiated = true
@@ -280,7 +298,7 @@ function InitAfterData()
 		CashFrameInit()
 		CashFrameUpdate(playerData)
 		self.RightUI.Update(playerData)
-		self.RightUI.TopBarInit(playerData)
+		self.TopBarInit(playerData)
 		self.AFKUI.Update(playerData)
 		self.EventUI.Update(playerData.States.Event)
 		self.MergeBtn.MouseButton1Click:Connect(function()

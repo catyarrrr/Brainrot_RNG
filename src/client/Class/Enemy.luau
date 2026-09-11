@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 local LevelData = require(ReplicatedStorage.Datas.LevelData :: ModuleScript) 
 local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
 
-local SPEED, SPEED_RUSH, OFFSET_X, OFFSET_Y = 10, 1, 15, .125
+local SPEED, SPEED_BOSS, SPEED_RUSH, OFFSET_X, OFFSET_Y = 10, 3, 1, 15, .125
 local RUSH_FARM_DEBOUNCE = .35
 local VisualTask, pathEnemies, enemies, primaryParts, cFrames, ClearAll, GetReward = {}, {}, {}, {}, {}, nil
 local Class : any = {}
@@ -52,6 +52,9 @@ function Class.new(round, type, assetId, pathId, health, reward)
 	if type == 'Rush' then
 		self.RawSpeed = SPEED_RUSH
 		self.Speed = SPEED_RUSH
+	elseif type == 'Elite' or type == 'Boss' then
+		self.RawSpeed = SPEED_BOSS
+		self.Speed = SPEED_BOSS
 	else
 		self.RawSpeed = SPEED
 		self.Speed = SPEED

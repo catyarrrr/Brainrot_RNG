@@ -68,6 +68,7 @@ return {
         ['FastRoll'] = false,
         ['AutoMerge'] = false,
         ['TotemSlot'] = false,
+        ['CloneSlot'] = false,
     },
 
     States = {

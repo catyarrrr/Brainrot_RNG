@@ -4,7 +4,7 @@ local ItemData = require(ReplicatedStorage.Datas.ItemData :: ModuleScript)
 local Class = {}
 Class.__index = Class
 
-local SPEED, SPEED_RUSH = 10, 1
+local SPEED, SPEED_BOSS, SPEED_RUSH = 10, 3, 1
 local pathEnemies, enemies, GetReward, ClearAll = {}, {}, nil
 
 function Class.start()
@@ -27,6 +27,9 @@ function Class.new(game, round, enemyType, pathId, health, reward)
 	if enemyType == 'Rush' then
 		self.RawSpeed = SPEED_RUSH
 		self.Speed = SPEED_RUSH
+	elseif enemyType == 'Elite' or enemyType == 'Boss' then
+		self.RawSpeed = SPEED_BOSS
+		self.Speed = SPEED_BOSS
 	else
 		self.RawSpeed = SPEED
 		self.Speed = SPEED
