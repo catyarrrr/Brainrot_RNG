@@ -50,17 +50,20 @@ function self.start()
 	self.CreateBadgeEvent:Connect(self.BadgeModule.new, self)
 	shared.Tower.SpawnTowerEvent:Connect(GenerateTowerGui, self)
 	shared.Tower.SpawnTowerEvent:Connect(function(_, _, towerUID, _, _, _, model) self.GenerateMutParticle(_, towerUID, model) end)
-	shared.Game.GameStartedEvent:Connect(function() InitTowerParticle(); InitEnemyLoot(); self.StartTotemSpin() end)
+	shared.Game.GameStartedEvent:Connect(function() InitTowerParticle(); self.StartTotemSpin() end)
 	shared.Game.GameEndedEvent:Connect(function()
         self.StopTotemSpin()
         shared.ObjectPool.DestroyByTag('TowerParticle')
     end)
 
 	ReplicatedStorage.Remote.PlayerRoll.OnClientEvent:Connect(RollTower)
+	ReplicatedStorage.Remote.CardIncome.OnClientEvent:Connect(function(position, reward)
+		self.EnemyFarmEvent:Fire(position, reward)
+	end)
 	ReplicatedStorage.Remote.Tower.TowerUpgrade.OnClientEvent:Connect(function(cf)
 		self.PlayParticle(nil, 'UpgradeEffect', cf.Position + Vector3.new(0, 4, 0), 2)
 	end)
-	InitTowerSwitchVisual(); GradientSpin(); GradientHorizontalMove(); GradientVerticalMove()
+	InitTowerSwitchVisual(); GradientSpin(); GradientHorizontalMove(); GradientVerticalMove(); InitEnemyLoot()
 end
 
 function self.FormatNumber(num)
@@ -309,7 +312,9 @@ function RollTower(isVIP)
 	local function SetTowerVisible(model, visible)
 		local transparency = visible and 0 or 1
 		for _, part in GetTowerParts(model) do
-			part.Transparency = transparency
+			if part.Transparency ~= transparency then
+				part.Transparency = transparency
+			end
 		end
 	end
 	local duration = isVIP and 1 or 3
@@ -335,12 +340,23 @@ function RollTower(isVIP)
 		SetTowerVisible(list[1], true)
 	end
 
+	local slotList = {}
+	for slot, list in bySlot do
+		if #list > 1 then
+			table.insert(slotList, slot)
+		end
+	end
+
 	local startTime = os.clock()
+	local slotCursor = 0
 	while os.clock() - startTime < duration do
 		local alpha = (os.clock() - startTime) / duration
-		task.wait(0.08 + 0.22 * alpha * alpha)
+		task.wait(0.04 + 0.08 * alpha * alpha)
 
-		for slot, list in bySlot do
+		if #slotList > 0 then
+			slotCursor = slotCursor % #slotList + 1
+			local slot = slotList[slotCursor]
+			local list = bySlot[slot]
 			local next = shown[slot] % #list + 1
 			SetTowerVisible(list[shown[slot]], false)
 			SetTowerVisible(list[next], true)
@@ -570,15 +586,13 @@ function InitTowerSwitchVisual()
 				v.Anchored = true
 				v.CanCollide = false
 				v.CanQuery = false
+				v.CanTouch = false
+				v.CastShadow = false
+				v.Transparency = 1
 			end
 		end
 		if workspace.StreamingEnabled then
 			model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
-		end
-		for _, v in model:GetDescendants() do
-			if v:IsA('BasePart') then
-				v.Transparency = 1
-			end
 		end
 		model.Parent = workspace
 		table.insert(gachaTowers, model)
@@ -608,6 +622,8 @@ function InitTowerSwitchVisual()
 			end
 			gachaTowerSlot[i] = slotIndex
 		end
+
+		ContentProvider:PreloadAsync(gachaTowers)
 
 		gachaPositioned = true
 	end)

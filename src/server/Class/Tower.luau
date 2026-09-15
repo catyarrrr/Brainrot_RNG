@@ -15,6 +15,7 @@ Class.__index = Class
 function Class.init()
 	Class.PickupAllEvent = shared.Event.new()
 	Class.SpawnEvent = shared.Event.new()
+	Class.DespawnEvent = shared.Event.new()
 end
 
 function Class.start()
@@ -207,6 +208,8 @@ function Class:Destroy()
 	
 	ReplicatedStorage.Remote.Tower.TowerDespawn:FireAllClients(self.Id)
 	
+	local owner, pathId = self.Owner, self.PathId
+
 	Class.collections[self.Id] = nil
 	Class.collections[self.UID] = nil
 
@@ -221,6 +224,8 @@ function Class:Destroy()
 	for _, connection in self.Connection do connection:Disconnect() end
 	if self.ActionTask then self.ActionTask:Remove() end
 	-- Deconstruct(self)
+
+	Class.DespawnEvent:Fire(owner, pathId)
 end
 
 -- Enemy进入攻击范围时执行的逻辑

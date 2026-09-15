@@ -53,12 +53,16 @@ function self.init()
 end
 
 function self.start()
-    shared.PlayerDataHandler.DataChangedEvent:Connect(function(self, tag)
-        if tag and table.find(tag, 'Guide') then DisableGuide(); CheckGuide() end
-    end, self)
-	while shared.GridHandler.Initiated == false do task.wait() end
+    task.spawn(function()
+        while shared.GridHandler.Initiated == false do task.wait() end
+        while shared.UIHandler.InitCompleted ~= true do task.wait() end
 
-    CheckGuide()
+        shared.PlayerDataHandler.DataChangedEvent:Connect(function(self, tag)
+            if tag and table.find(tag, 'Guide') then DisableGuide(); CheckGuide() end
+        end, self)
+
+        CheckGuide()
+    end)
 end 
 
 function CheckGuide()

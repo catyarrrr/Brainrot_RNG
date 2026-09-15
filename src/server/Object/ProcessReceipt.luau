@@ -100,6 +100,18 @@ function self.init()
 			end
 			return true 
 		end,
+		[shared.ProductDatas.CardUpgrade] = function(player) 
+			local playerData = shared.DataStore.GetData(player)
+			local cardLevel = playerData.Profile.CardLevel
+			local cardData = TempData.CardDict[cardLevel]
+
+			if cardData == nil or cardData.NextCost == nil then 
+				return false
+			else
+				shared.DataStore.CoinController.BuyCardUpgrade(player, cardLevel + 1)
+			end
+			return true 
+		end,
 		[shared.ProductDatas.StartLevelUpgrade] = function(player) 
 			local playerData = shared.DataStore.GetData(player)
 			local startLevel = playerData.Profile.StartLevel

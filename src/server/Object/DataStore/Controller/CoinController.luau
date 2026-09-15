@@ -129,6 +129,25 @@ function self.UpgradeStartLevel(player, cost, nextStartLevel)
     self.SetPlayerData(player)
 end
 
+function self.UpgradeCard(player, cost)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    self.Consume(player, cost)
+    tarData.Profile.CardLevel += 1
+
+    self.SetPlayerData(player)
+end
+
+function self.BuyCardUpgrade(player, nextLevel)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    tarData.Profile.CardLevel = nextLevel
+
+    self.SetPlayerData(player)
+end
+
 function self.BuyDoubleCash(player)
     local tarData = self.GetData(player)
     if not tarData then return end
@@ -158,6 +177,15 @@ function self.BuyCash(player, amount)
 end
 
 function self.SellForCash(player, amount)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    tarData.Coin.Cash += amount
+
+    self.SetPlayerData(player, 'Cash')
+end
+
+function self.CardIncome(player, amount)
     local tarData = self.GetData(player)
     if not tarData then return end
 

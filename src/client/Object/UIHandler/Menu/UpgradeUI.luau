@@ -28,6 +28,7 @@ function self.Init(main)
     self.LuckFrame = self.StatsFrame.Luck
     self.WaveFrame = self.StatsFrame.Wave
     self.CashFrame = self.StatsFrame.Cash
+    self.CardFrame = self.StatsFrame.Card
     self.Title = self.Frame.Title
     self.SkinFrame = {
         [1] = self.RegionFrame.ClassicRegionalSkinFrame,
@@ -91,6 +92,14 @@ function self.Init(main)
     end)
     self.WaveFrame.RBXButton.MouseButton1Click:Connect(function()
         shared.BuyHandler.BuyProduct(shared.ProductDatas.StartLevelUpgrade)
+        self:Close()
+    end)
+    self.CardFrame.CashButton.MouseButton1Click:Connect(function()
+        ReplicatedStorage.Remote.PlayerUpgradeCard:FireServer()
+        self:Close()
+    end)
+    self.CardFrame.RBXButton.MouseButton1Click:Connect(function()
+        shared.BuyHandler.BuyProduct(shared.ProductDatas.CardUpgrade)
         self:Close()
     end)
     
@@ -174,6 +183,18 @@ function self.Update()
         self.WaveFrame.CashButton.TextLabel.Text = shared.VFXHandler.FormatNumber(startLevelData.Cost)
         self.WaveFrame.DataText.Text = string.format('%d -> %d Start Wave', startLevel, startLevelData.Next)
         
+    end
+
+    -----------     卡片升级
+    local cardLevel = playerData.Profile.CardLevel
+    local cardData = TempData.CardDict[cardLevel]
+    if cardData.NextCost == nil then
+        self.CardFrame.CashButton.TextLabel.Text = 'MAX'
+        self.CardFrame.RBXButton.Visible = false
+        self.CardFrame.DataText.Text = string.format('%dmin Reward', cardData.Display[1])
+    else
+        self.CardFrame.CashButton.TextLabel.Text = shared.VFXHandler.FormatNumber(cardData.NextCost)
+        self.CardFrame.DataText.Text = string.format('%dmin -> %dmin Reward', cardData.Display[1], cardData.Display[2])
     end
 end
 

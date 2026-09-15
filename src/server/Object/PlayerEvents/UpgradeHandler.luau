@@ -87,6 +87,25 @@ function self.UpgradeStartLevel(player)
 		end
 	end
 end
+function self.UpgradeCard(player)
+	local playerData = shared.DataStore.GetData(player)
+	local cardLevel = playerData.Profile.CardLevel
+	local cardData = TempData.CardDict[cardLevel]
+
+	if cardData == nil or cardData.NextCost == nil then
+		ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Level MAX!!!')
+		return
+	else
+		local cost = cardData.NextCost
+		local chk = shared.DataStore.CoinController.CheckCash(player, cost)
+		if chk == true then
+			shared.DataStore.CoinController.UpgradeCard(player, cost)
+		else
+			ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Cash not enough!!!')
+			return
+		end
+	end
+end
 function self.BuyTerritory(player, terrId)
 	local playerData = shared.DataStore.GetData(player)
 

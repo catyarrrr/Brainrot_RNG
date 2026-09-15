@@ -1,9 +1,12 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
+local QuickZone = require(ReplicatedStorage.QuickZone :: ModuleScript)
 local LevelData = require(ReplicatedStorage.Datas.LevelData :: ModuleScript)
 local TotemData = require(ReplicatedStorage.Datas.TotemData :: ModuleScript)
 local TempData = require(ReplicatedStorage.Datas.TempData :: ModuleScript)
+local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
+local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
 
 local HEIGHT_ORI, HEIGHT_HIDDEN = 2, -100
 local Class = {collections = {}, Initiated = nil}
@@ -62,6 +65,17 @@ function Class.start()
 		end
 
 		UpdateDPS(player, pathId)
+
+		local area = Class.collections[pathId]
+		if area then area:UpdateCardBoard() end
+	end)
+	shared.Tower.DespawnEvent:Connect(function(_, player, pathId)
+		while Class.Initiated == nil do
+			task.wait()
+		end
+
+		local area = Class.collections[pathId]
+		if area then area:UpdateCardBoard() end
 	end)
 	shared.Game.GameOverEvent:Connect(function(_, player, pathId, round, rush)
 		UpdateAreaBest(player, pathId, round, rush)
@@ -75,6 +89,15 @@ function Class.start()
 	end
 
 	Class.Initiated = true
+
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			for _, area in Class.collections do
+				area:UpdateCardBoardIncome(true)
+			end
+		end
+	end)
 end
 
 function Class.new(model)
@@ -82,13 +105,20 @@ function Class.new(model)
 
 	self.SpawnCF = model.SpawnPos.WorldCFrame
 	self.AreaCF = model.AreaPos.WorldCFrame
+	self.DPSCF = model.DPSPos.WorldCFrame
 	self.MapCF = model.MapPos.WorldCFrame
+	self.CardCF = model.CardPos.WorldCFrame
 	self.TerritoryCF = model.TerritoryPos.WorldCFrame
 	self.TotemCF = model.TotemPos.WorldCFrame
 	self.TowerAreaFolder = model.TowerArea
 	self.Id = tonumber(model.Name)
 	self.OwnerFrame = model.OwnerGui
-	self.DPSGui = model.DPSGui
+
+	local dpsBoard = ServerStorage.DPSBoard:Clone()
+	dpsBoard:PivotTo(self.DPSCF)
+	dpsBoard.Parent = model
+	self.DPSBoard = dpsBoard
+	self.DPSGui = dpsBoard:FindFirstChild('SurfaceGui', true)
 	self.DPSGui.Enabled = true
 	self.DPSGui.DPS.Text = '0'
 
@@ -98,6 +128,25 @@ function Class.new(model)
 	-- self.TotemModel:PivotTo(self.TotemCF)
 	-- self.TotemModel.Parent = model
 	--
+
+	--#region		CardBoard
+	self.CardBoard = ServerStorage.CardBoard:Clone()
+	self.CardBoard:PivotTo(self.CardCF)
+	self.CardBoard.Parent = model
+	self.CardBoardScrollingFrame = self.CardBoard.CardFrame.ScrollingFrame
+	self.CardBoardTitle = self.CardBoard.CardTitle
+	self.CardBoardIncomeBtn = self.CardBoard.IncomeBtn.TextButton
+	local observer = QuickZone.Observer.new()
+		:attach(QuickZone.Zone.fromPart(self.CardBoard.TriggerZone))
+		:subscribe(QuickZone.Group.players())
+	observer:onPlayerEnter(function(player, zone)
+		if player == self.Owner then
+			self:ClaimCardIncome(player)
+		end
+	end)
+	self.Cards = {}
+	self.CardIncome = 0
+	--#endregion
 
 	WaitForGachaMachine(self)
 	-- print(self.Id)
@@ -146,9 +195,139 @@ function Class:Enter(data, plr)
 	if self.GachaMachine then
 		self.GachaMachine:Enter(plr)
 	end
+
+	self:UpdateCardBoard()
+	self:SetOfflineCardIncome(data)
 end
 
-function Class:SwitchMap(id)
+function Class:SetOfflineCardIncome(data)
+	local lastTime = data.States and data.States.LastTime
+	if lastTime == nil then return end
+
+	local cardData = TempData.CardDict[data.Profile.CardLevel]
+	if cardData == nil then return end
+
+	local offlineSeconds = math.min(os.time() - lastTime, cardData.MaxTime)
+	if offlineSeconds <= 0 then return end
+
+	local totalRate = 0
+	for _, entry in data.Tower.Inv do
+		if entry.GridXY == nil then continue end
+
+		local staticData = TowerData.GetData(entry.TowerUID)
+		if staticData == nil then continue end
+
+		totalRate += staticData.Income or 0
+	end
+
+	self.CardIncome += totalRate * offlineSeconds
+
+	self:UpdateCardBoardIncome(false)
+end
+
+function Class:UpdateCardBoard()
+	if self.CardBoardScrollingFrame == nil then return end
+
+	for _, v in self.CardBoardScrollingFrame:GetChildren() do
+		if v:IsA('Frame') then
+			v:Destroy()
+		end
+	end
+	self.Cards = {}
+
+	local pathTowers = shared.Tower.GetByPathId(self.Id)
+	if pathTowers == nil then
+		self:UpdateCardBoardIncome(false)
+		return
+	end
+
+	for _, tower in pathTowers do
+		local staticData = TowerData.GetData(tower.TowerUID)
+		if staticData == nil then continue end
+
+		local template = ReplicatedStorage.Assets.UI.CardSlot:FindFirstChild('Card' .. staticData.Quality)
+		if template == nil then warn('card slot not found for quality:', staticData.Quality); continue end
+
+		local card = template:Clone()
+		local asset = AssetsData[TowerData.GetAssetIdByTowerUID(tower.TowerUID)]
+		if asset then card.Frame.Label.Icon.Image = asset.Icon end
+		card.Frame.Label.NameText.Text = staticData.DisplayName
+		card.Parent = self.CardBoardScrollingFrame
+		table.insert(self.Cards, { Frame = card, Tower = tower })
+	end
+
+	self:UpdateCardBoardIncome(false)
+end
+function Class:UpdateCardBoardIncome(accumulate)
+	local totalRate, delta = 0, 0
+
+	local maxTime
+	if accumulate and self.Owner then
+		local playerData = shared.DataStore.GetData(self.Owner)
+		local cardData = playerData and TempData.CardDict[playerData.Profile.CardLevel]
+		if cardData then maxTime = cardData.MaxTime end
+	end
+
+	for _, entry in self.Cards do
+		local staticData = TowerData.GetData(entry.Tower.TowerUID)
+		if staticData == nil then continue end
+
+		local income = staticData.Income or 0
+		local before = entry.Tower.CardIncome or 0
+		if accumulate then
+			local cap = math.huge
+			if maxTime then cap = income * maxTime end
+			entry.Tower.CardIncome = math.min(before + income, cap)
+		end
+		local accumulated = entry.Tower.CardIncome or 0
+		delta += accumulated - before
+
+		totalRate += income
+
+		local mutations = entry.Frame.Frame.Label.Mutations
+		local mutId = TowerData.GetMutIdByTowerUID(entry.Tower.TowerUID)
+		for _, label in mutations:GetChildren() do
+			if label:IsA('TextLabel') then
+				label.Visible = label.Name == tostring(mutId)
+			end
+		end
+		local mutLabel = mutId and mutations:FindFirstChild(tostring(mutId))
+		if mutLabel then
+			mutLabel.Text = string.format('%s ($%s/s)', shared.Tool.FormatNumber(accumulated), shared.Tool.FormatNumber(income))
+		end
+	end
+
+	if accumulate then
+		self.CardIncome += delta
+	end
+
+	if self.CardBoardIncomeBtn then
+		self.CardBoardIncomeBtn.Text = '$'  .. shared.Tool.FormatNumber(self.CardIncome)
+	end
+	if self.CardBoardTitle then
+		self.CardBoardTitle.TextLabel.Text = string.format('Total %s/s', shared.Tool.FormatNumber(totalRate))
+	end
+end
+function Class:ClaimCardIncome(player)
+	if player ~= nil and self.Owner ~= player then return end
+
+	local amount = self.CardIncome
+	if amount <= 0 then return end
+
+	for _, entry in self.Cards do
+		entry.Tower.CardIncome = 0
+	end
+	self.CardIncome = 0
+	self:UpdateCardBoardIncome(false)
+
+	local owner = player or self.Owner
+	shared.DataStore.CoinController.CardIncome(owner, amount)
+	ReplicatedStorage.Remote.CardIncome:FireClient(owner, self.CardBoard.TriggerZone.Position, amount)
+
+	return amount
+end
+
+function Class:SwitchMap(id)	--切换关卡
 	local map = ServerStorage.Map:FindFirstChild(tostring(id))
 	if map == nil then warn('map not found for id:', id); return end
 
@@ -282,6 +461,15 @@ function Class:Reset()
 	if self.GachaMachine then self.GachaMachine:Reset() end
 
 	-- self:UpdateTotem(nil)
+
+	for k, v in self.CardBoardScrollingFrame:GetChildren() do
+		if v:IsA('Frame') then
+			v:Destroy()
+		end
+	end
+	self.Cards = {}
+	self.CardIncome = 0
+	self:UpdateCardBoardIncome(false)
 
 	self:SwitchMap(1)
 	self.Level = nil

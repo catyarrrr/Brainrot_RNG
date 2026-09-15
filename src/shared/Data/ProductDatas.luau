@@ -19,6 +19,7 @@ return {
     ['2xServerLuck'] = 3711744494,
     ['BaseUpgrade'] = 3711744512,
     ['LuckUpgrade'] = 3711744542,
+    ['CardUpgrade'] = 3712960618,
     ['CashUpgrade'] = 3711744601,
     ['StartLevelUpgrade'] = 3711744572,
     ['x3Offline'] = 3711744614,

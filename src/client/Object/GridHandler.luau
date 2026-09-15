@@ -201,9 +201,11 @@ function InitAfterData()
         self.Area = workspace:WaitForChild('SceneLogic'):WaitForChild('Areas'):WaitForChild(curPath)
         self.GachaMachine = workspace:WaitForChild('SceneLogic'):WaitForChild('GachaMachine'):WaitForChild('Machine' .. tostring(curPath))
         self.HealthFrame = self.Area.HealthGui:WaitForChild('HealthFrame')
-        self.DPSGui = self.Area.DPSGui
-        self.DPSGui.DPS.Text = 0
-        self.DPSGui.Enabled = true
+        self.DPSGui = self.Area:FindFirstChild('SurfaceGui', true)
+        if self.DPSGui then
+            self.DPSGui.DPS.Text = 0
+            self.DPSGui.Enabled = true
+        end
         
         ModelInit(self)
         TowerPlacementInit(shared.PlayerDataHandler.GetData())

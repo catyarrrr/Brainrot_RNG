@@ -622,6 +622,7 @@ function NoticeReward(rewardData)
 end
 
 function self.ToggleGuide(isShow, text)
+	if self.Guide == nil then return end
 	if isShow then
 		self.Guide.Visible = true
 		self.Guide.Text = text
@@ -631,6 +632,7 @@ function self.ToggleGuide(isShow, text)
 end
 
 function self.SetMask(targetFrame)
+	if self.GuideCover == nil or targetFrame == nil then return end
 	self.GuideCover.Visible = true
 
 	local top = self.GuideCover.Top
@@ -711,6 +713,7 @@ function self.SetMask(targetFrame)
 	)
 end
 function self.DisableMask()
+	if self.GuideCover == nil then return end
 	self.GuideCover.Visible = false
 end
 

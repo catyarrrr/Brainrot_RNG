@@ -94,6 +94,7 @@ return {
         MaxLevel = 1,
         MaxChallenge = 1,
         StartLevel = 1,
+        CardLevel = 1,
         Spend = 0
     },
 
