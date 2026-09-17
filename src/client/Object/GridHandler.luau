@@ -2,8 +2,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 
-local InitAfterData, ModelInit, ResetHealthBar, ModifyHealthBar, TowerPlacementInit, UpdateDPS = nil
-local SIZE_CELL= 5
+local InitAfterData, ModelInit, ResetHealthBar, ModifyHealthBar, TowerPlacementInit, PlaceStarterTower = nil
+local SIZE_CELL, STARTER_TOWER_UID, STARTER_GRID = 5, 20101, {1, 1}
 local self : any = {GhostX = nil, GhostY = nil, GhostCells = {}, GhostShape = nil, GridToWorld = nil, SpawnArea = nil, Cells = {}, Initiated = false}
 local Grid : any = {}
 
@@ -200,18 +200,31 @@ function InitAfterData()
 	    self.SpawnArea = workspace:WaitForChild('Platforms'):WaitForChild(curPath):WaitForChild('Platform')
         self.Area = workspace:WaitForChild('SceneLogic'):WaitForChild('Areas'):WaitForChild(curPath)
         self.GachaMachine = workspace:WaitForChild('SceneLogic'):WaitForChild('GachaMachine'):WaitForChild('Machine' .. tostring(curPath))
+        self.CardBoard = self.Area:WaitForChild('CardBoard')
         self.HealthFrame = self.Area.HealthGui:WaitForChild('HealthFrame')
-        self.DPSGui = self.Area:FindFirstChild('SurfaceGui', true)
-        if self.DPSGui then
-            self.DPSGui.DPS.Text = 0
-            self.DPSGui.Enabled = true
-        end
         
         ModelInit(self)
         TowerPlacementInit(shared.PlayerDataHandler.GetData())
         
         self.Initiated = true
+        PlaceStarterTower()
 	end)
+end
+
+function PlaceStarterTower()
+    local playerData = shared.PlayerDataHandler.GetData()
+    if playerData == nil or playerData.States.IsNew ~= true then return end
+
+    for _, v in pairs(playerData.Tower.Inv) do
+        if v.GridXY ~= nil then continue end
+        if v.TowerUID ~= STARTER_TOWER_UID then continue end
+
+        local towerStaticData = TowerData.GetData(v.TowerUID)
+        if towerStaticData == nil then continue end
+
+        ReplicatedStorage.Remote.Tower.TowerSpawn:FireServer(v.UID, towerStaticData.DisplayName, self.GridToWorld(STARTER_GRID[1], STARTER_GRID[2]), v.TowerUID, STARTER_GRID, towerStaticData.Shape, true)
+        break
+    end
 end
 
 function TowerPlacementInit(playerData)
@@ -223,7 +236,7 @@ function TowerPlacementInit(playerData)
     for k, v in pairs(playerData.Tower.Inv) do
         if v.GridXY == nil then continue end
         local towerStaticData = TowerData.GetData(v.TowerUID)
-        ReplicatedStorage.Remote.Tower.TowerSpawn:FireServer(v.UID, towerStaticData.DisplayName, self.GridToWorld(v.GridXY[1], v.GridXY[2]), v.TowerUID, v.GridXY, towerStaticData.Shape)
+        ReplicatedStorage.Remote.Tower.TowerSpawn:FireServer(v.UID, towerStaticData.DisplayName, self.GridToWorld(v.GridXY[1], v.GridXY[2]), v.TowerUID, v.GridXY, towerStaticData.Shape, true)
     end
 end
 

@@ -164,7 +164,7 @@ function Class:Gacha(player)
             local playerPath = shared.DataStore.GetPlayerCurPath(player)
             if playerPath ~= self.Id then return end
             if shared.DataStore.CoinController.CheckCash(player, tower.Cost) == true then
-                shared.DataStore.PlayerConfirmGuide(player, 1)
+                shared.DataStore.PlayerConfirmGuide(player, 2)
                 shared.SoundHandler:PlayAt('AlienBuy_Success', self.SpawnPos[index].Position)
                 local newUID = HttpService:GenerateGUID(false)
                 shared.DataStore.CoinController.Consume(player, tower.Cost)

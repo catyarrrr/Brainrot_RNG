@@ -12,7 +12,7 @@ return {
             
         },
         Collection = {
-            
+            Total = 0
         },
         Clone = {
             SourceUID = false,
@@ -103,6 +103,7 @@ return {
        [2] = false,
        [3] = false,
        [4] = false,
+       [5] = false,
     },
 
     BossChallenge = {

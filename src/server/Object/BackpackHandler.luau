@@ -14,7 +14,7 @@ function self.start()
 			char.ChildAdded:Connect(function(child: Instance)
 				if child:IsA('Tool') then
 					-- print('equip tool')
-					shared.DataStore.PlayerConfirmGuide(player, 2)
+					shared.DataStore.PlayerConfirmGuide(player, 3)
 				end
 			end)
 			

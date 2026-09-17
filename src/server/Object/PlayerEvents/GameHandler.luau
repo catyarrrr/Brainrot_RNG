@@ -37,7 +37,7 @@ function self.GameStart(player)
 
 	local playerData = shared.DataStore.GetData(player)
 	if not playerData then return end
-	shared.DataStore.PlayerConfirmGuide(player, 4)
+	shared.DataStore.PlayerConfirmGuide(player, 1)
 	game:Start(maxLevel, nil, playerData.Profile.StartLevel)
 end
 function self.RushStart(player, multi)
@@ -53,7 +53,7 @@ function self.RushStart(player, multi)
 
 	local maxLevel = LevelData.MAXRUSH
 
-	shared.DataStore.PlayerConfirmGuide(player, 4)
+	shared.DataStore.PlayerConfirmGuide(player, 1)
 	game:Start(maxLevel, multi)
 end
 function self.GameStop(player)

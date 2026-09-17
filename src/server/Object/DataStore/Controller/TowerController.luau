@@ -35,6 +35,18 @@ function self.Remove(player, uid, towerUID, gridXY, shapeName)
     self.SetPlayerData(player)
 end
 
+function self.RecoverPlaceFail(player, uid, isAuto)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    local towerEntry = tarData.Tower.Inv[uid]
+    if towerEntry == nil or towerEntry.GridXY == nil then return end
+
+    self.TowerModule.SetTowerGrid(tarData.Tower, uid, nil)
+    
+    self.SetPlayerData(player)
+end
+
 function self.RemoveAll(player)
     local tarData = self.GetData(player)
     if not tarData then return end

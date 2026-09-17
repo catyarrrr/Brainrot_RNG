@@ -12,25 +12,25 @@ function self.Init(frame)
     self.Content = self.Frame.Frame.Content
 
     self.Frame.Close.MouseButton1Click:Connect(function()
-        self:Close()
+        self:Send(false)
     end)
     self.ConfirmBtn.MouseButton1Click:Connect(function()
-        ReplicatedStorage.Remote.PlayerGift:FireServer(true)
+        self:Send(true)
     end)
     self.CancelBtn.MouseButton1Click:Connect(function()
-        ReplicatedStorage.Remote.PlayerGift:FireServer(false)
+        self:Send(false)
     end)
 end
 
+-- 按钮防连点：一次交易只允许发送一次请求，避免重复触发 notice
+function self:Send(confirm)
+    if self.Sending then return end
+    self.Sending = true
+    ReplicatedStorage.Remote.PlayerGift:FireServer(confirm)
+end
+
 function self.ToggleGiver(other : Player, alienName)
-    -- if self.ConfirmConn then
-    --     self.ConfirmConn:Disconnect()
-    --     self.ConfirmConn = nil
-    -- end
-    -- if self.CancelConn then
-    --     self.CancelConn:Disconnect()
-    --     self.CancelConn = nil
-    -- end
+    self.Sending = false
 
     self.Content.Text = string.format('Waiting for %s \n to accept yr %s', other.DisplayName, alienName)
 
@@ -39,14 +39,7 @@ function self.ToggleGiver(other : Player, alienName)
 
 end 
 function self.ToggleReceiver(other : Player, alienName)
-    -- if self.ConfirmConn then
-    --     self.ConfirmConn:Disconnect()
-    --     self.ConfirmConn = nil
-    -- end
-    -- if self.CancelConn then
-    --     self.CancelConn:Disconnect()
-    --     self.CancelConn = nil
-    -- end
+    self.Sending = false
 
     self.Content.Text = string.format('%s wants to give u \n %s', other.DisplayName, alienName)
     
@@ -55,6 +48,7 @@ function self.ToggleReceiver(other : Player, alienName)
 end 
 
 function self:Open()
+    self.Sending = false
     self.Main:TweenOpen()
 end
 function self:Close()

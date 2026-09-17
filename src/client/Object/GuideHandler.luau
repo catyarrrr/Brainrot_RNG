@@ -3,13 +3,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local self = {}
-local CheckGuide, GuideToRoll = nil
+local CheckGuide = nil
 
 local GuideConfig = {
-    [1] = 'GuideToRoll',
-    [2] = 'GuideToEquip',
-    [3] = 'GuideToPlace',
-    [4] = 'GuideToStart',
+    [1] = 'GuideToStart',
+    [2] = 'GuideToRoll',
+    [3] = 'GuideToEquip',
+    [4] = 'GuideToPlace',
+    [5] = 'GuideToCard',
 }
 local GuideStep = {
     GuideToRoll = function()
@@ -45,6 +46,15 @@ local GuideStep = {
 
         shared.UIHandler.ToggleGuide(true, 'Start yr first Battle!!!')
         shared.UIHandler.SetMask(shared.UIHandler.TopUI.StartBtn)
+    end,
+    GuideToCard = function() 
+        local char = player.Character
+        local root = char and char:WaitForChild('HumanoidRootPart')
+        if root == nil then return end
+
+        local part = shared.GridHandler.CardBoard.TriggerZone
+        shared.UIHandler.ToggleGuide(true, 'Claim yr first Brainrotcard income')
+        shared.VFXHandler.ShowGuideBeam('GuideToRoll', part, nil, root, nil)
     end,
 }
 

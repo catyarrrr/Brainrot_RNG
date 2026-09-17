@@ -136,7 +136,7 @@ function self.ClearTowerHighlight()
 end
 
 -- 鼠标指向显示幽灵塔
-function self.ShowTowerOnMouse(modelName, towerUID)
+function self.ShowTowerOnMouse(modelName, towerUID, traitId)
 	local targetTower = ReplicatedStorage.Assets.Towers:FindFirstChild(modelName)
 	if not targetTower then print('targetTower not found'); return end 
 
@@ -151,8 +151,9 @@ function self.ShowTowerOnMouse(modelName, towerUID)
 		end
 	end
 
-	--- 根据数据设置防御塔Range
-	local data = TowerData.GetData(towerUID)
+	--- 根据数据设置防御塔Range（应用Trait修正）
+	local data = TowerData.GetCloneData(towerUID)
+	shared.CalculateData.ApplyModifiers(data, traitId)
 	visualTower.Circle.Size = Vector3.new(data.Range*2, visualTower.Circle.Size.Y, data.Range*2)
 
 	visualTower.Parent = visualFolder

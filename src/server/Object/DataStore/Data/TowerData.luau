@@ -227,7 +227,7 @@ function self.CompleteClone(towerData, newUID, slot)
 end
 
 function CollectTower(towerData, towerUID)
-    if towerData.Collection == nil then
+    if towerData.Collection == nil or towerData.Collection.Total == nil then
         towerData.Collection = {
             List = {},
             Total = 0

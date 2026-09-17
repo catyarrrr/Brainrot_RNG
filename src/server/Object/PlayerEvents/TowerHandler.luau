@@ -19,7 +19,7 @@ local function IsGoldMut()
 	return false
 end
 
-function self.SpawnTower(player, uid, towerName, cframe: CFrame, towerUID, gridXY, shapeName)
+function self.SpawnTower(player, uid, towerName, cframe: CFrame, towerUID, gridXY, shapeName, isAuto)
 	raycastParams.FilterDescendantsInstances = {workspace.Platforms}
 	if not workspace:Raycast(cframe.Position + cframe.UpVector*.2, -cframe.UpVector*1, raycastParams) then warn('can not place here'); return end
 
@@ -36,6 +36,7 @@ function self.SpawnTower(player, uid, towerName, cframe: CFrame, towerUID, gridX
 	else
 		local chk = shared.DataStore.TowerController.Place(player, uid, towerUID, gridXY, shapeName)
 		if chk == false then
+			shared.DataStore.TowerController.RecoverPlaceFail(player, uid, isAuto)
 			ReplicatedStorage.Remote.Sound.AlienPlace_Fail:FireClient(player)
 			ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Can not place Brainrot here!!!')
 			return
@@ -44,7 +45,7 @@ function self.SpawnTower(player, uid, towerName, cframe: CFrame, towerUID, gridX
 		local playerData = shared.DataStore.GetData(player)
 		local towerInvData = playerData and playerData.Tower.Inv[uid]
 		local traitId = towerInvData and towerInvData.Trait
-		shared.DataStore.PlayerConfirmGuide(player, 3)
+		if isAuto ~= true then shared.DataStore.PlayerConfirmGuide(player, 4) end
 		shared.SoundHandler:PlayAt('AlienPlace_Success', cframe.Position)
 		shared.Tower.new(player, towerUID, uid, towerName, cframe, 1, nil, gridXY, shapeName, pathId, traitId)
 		shared.BackpackHandler.RemovePlayerBackpackTool(player, uid)

@@ -219,7 +219,7 @@ function ToolAdded(childAdded)
 
 	-- self.SpawnAreaHighlight.Enabled = true 
 	-- self.SpawnAreaHighlight.Adornee = shared.GridHandler.SpawnArea
-	shared.VFXHandler.ShowTowerOnMouse(assets.Model, towerUID)
+	shared.VFXHandler.ShowTowerOnMouse(assets.Model, towerUID, traitId)
 	shared.Tower.CheckMergeEvent:Fire(childAdded)
 	
 	toolConnection = childAdded.Activated:Connect(function()

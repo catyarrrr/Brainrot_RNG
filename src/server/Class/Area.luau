@@ -322,6 +322,7 @@ function Class:ClaimCardIncome(player)
 
 	local owner = player or self.Owner
 	shared.DataStore.CoinController.CardIncome(owner, amount)
+	shared.DataStore.PlayerConfirmGuide(owner, 5)
 	ReplicatedStorage.Remote.CardIncome:FireClient(owner, self.CardBoard.TriggerZone.Position, amount)
 
 	return amount

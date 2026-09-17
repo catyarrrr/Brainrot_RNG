@@ -95,6 +95,7 @@ function self.PlayerEnter(player)
 
     stores[player] = dataStore
 
+
     ServerEnterInit(player, defaultData)
     self.GridModule.GridInit(defaultData.Grid)
     InitPlayerPath(player, defaultData)
@@ -304,7 +305,8 @@ function ServerEnterInit(player, data)
     end
 
     if data.States.LastTime ~= nil then SetOfflineReward(data) end
-
+    
+    if data.States.IsNew == true then self.TowerModule.AddTower(data.Tower, 20101) end
     self.TowerController.RepairCloneEvolve(player)
 
 	-- data.States.LastTime = os.time()
