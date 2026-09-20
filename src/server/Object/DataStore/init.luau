@@ -105,6 +105,17 @@ function self.PlayerEnter(player)
     self.PlayerDataLoadedEvent:Fire(player, defaultData.Tower.Inv)
 	ReplicatedStorage.Remote.SetPlayerData:FireClient(player, defaultData)
     task.spawn(UpdatePlayerPasses, player)
+
+    --	PVP 被偷记录：上线后在聊天框提示
+    local notice = defaultData.States and defaultData.States.PVPStealNotice
+    if type(notice) == 'table' then
+        local text = string.format('%s stole $%s from you in PVP!', tostring(notice.From), shared.Tool.FormatNumber(notice.Amount or 0))
+        task.delay(6, function()
+            if player.Parent == nil then return end
+            ReplicatedStorage.Remote.ServerMessage:FireClient(player, text)
+            defaultData.States.PVPStealNotice = nil
+        end)
+    end
 end
 --- 	玩家退出
 function self.PlayerExit(player)
@@ -121,6 +132,7 @@ function self.PlayerExit(player)
 
     stores[player] = nil
     dataStore:Close()
+    dataStore:Destroy()
     ClearPlayerPath(player, data)
 end
 
@@ -136,6 +148,69 @@ function self.SetPlayerData(player, tag)
     local tarData = dataStore.Value
     if type(tag) == "string" then tag = {tag} end
     ReplicatedStorage.Remote.SetPlayerData:FireClient(player, tarData, tag)
+end
+
+--	对在线玩家执行偷取：扣款并提示，返回实偷金额
+function self.ApplyOnlineSteal(player, fromName, rate)
+    local data = self.GetData(player)
+    if data == nil or data.Coin == nil then return 0 end
+
+    local cash = data.Coin.Cash or 0
+    local stolen = math.floor(cash * rate)
+    if stolen <= 0 then return 0 end
+
+    data.Coin.Cash = cash - stolen
+    self.SetPlayerData(player, 'Cash')
+
+    local text = string.format('%s stole $%s from you in PVP!', fromName, shared.Tool.FormatNumber(stolen))
+    ReplicatedStorage.Remote.ServerMessage:FireClient(player, text)
+    ReplicatedStorage.Remote.ServerWarn:FireClient(player, text)
+    return stolen
+end
+
+--	给攻击方发放偷到的钱
+function self.CreditSteal(player, amount)
+    if type(amount) ~= 'number' or amount <= 0 then return end
+    self.CoinController.SellForCash(player, amount)
+end
+
+--	PVP 胜利偷取：从防守方实时现金取走 rate 比例，返回实偷金额
+--	同服在线直接改内存；离线用封装锁定存档后扣款并留上线提示；异服在线走 MessagingService 中转
+function self.StealCash(attacker, defenderUserId, rate)
+    rate = rate or shared.Config.PVPSTEAL_RATE
+
+    local defender = Players:GetPlayerByUserId(defenderUserId)
+    if defender ~= nil then
+        local stolen = self.ApplyOnlineSteal(defender, attacker.DisplayName, rate)
+        self.CreditSteal(attacker, stolen)
+        return stolen
+    end
+
+    local store = DataStoreModule.new('PlayerData', tostring(defenderUserId))
+    local response = store:Open(shared.PlayerDatas)
+    if response == 'Success' then
+        local data = store.Value
+        local cash = (data.Coin and data.Coin.Cash) or 0
+        local stolen = math.floor(cash * rate)
+        if stolen > 0 then
+            data.Coin.Cash = cash - stolen
+            data.States = data.States or {}
+            data.States.PVPStealNotice = { Amount = stolen, From = attacker.DisplayName }
+        end
+        store:Close()
+        store:Destroy()
+        self.CreditSteal(attacker, stolen)
+        return stolen
+    end
+    store:Destroy()
+
+    --	存档被锁说明对方在别的服务器在线，交给中转模块处理
+    if response == 'Locked' then
+        local stolen = shared.PVPStealRelay.StealRemote(defenderUserId, attacker, rate)
+        self.CreditSteal(attacker, stolen)
+        return stolen
+    end
+    return 0
 end
 
 ---------------- Path相关
@@ -317,6 +392,9 @@ function ServerEnterInit(player, data)
     self.GachaController.ChallengeUpdate(player)
     
     self.TotemController.CheckSlot2Unlock(player)
+
+    self.RewardController.RefreshPVPShop(player)
+    self.RewardController.RefreshPVPChallenge(player)
 end
 function SetOfflineReward(data)
     local now = os.time()

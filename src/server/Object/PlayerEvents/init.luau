@@ -57,6 +57,9 @@ function self.start()
 	rs.Remote.PlayerClaimOfflineReward.OnServerEvent:Connect(self.RewardHandler.ClaimOfflineReward)
 	rs.Remote.PlayerClaimLoginReward.OnServerEvent:Connect(self.RewardHandler.ClaimLoginReward)
 	rs.Remote.PlayerClaimWeeklyLoginReward.OnServerEvent:Connect(self.RewardHandler.ClaimWeeklyDaily)
+	rs.Remote.PVP.Fight.OnServerEvent:Connect(self.PVPHandler.StartFight)
+	rs.Remote.PVP.RequestOpponents.OnServerEvent:Connect(self.PVPOpponent.RequestOpponents)
+	rs.Remote.PVP.Buy.OnServerEvent:Connect(self.RewardHandler.BuyPVPItem)
 
 	rs.Remote.Tower.PremiumSlot.OnServerEvent:Connect(self.TowerHandler.UnlockCloneSlot)
 end

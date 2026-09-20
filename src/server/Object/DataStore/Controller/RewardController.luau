@@ -1,5 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PVPData = require(ReplicatedStorage.Datas.PVPData :: ModuleScript)
+local TotemData = require(ReplicatedStorage.Datas.TotemData :: ModuleScript)
 
 local self = {}
 local LoginRewardConfig = {
@@ -12,11 +14,50 @@ local LoginRewardConfig = {
     {Tower = 1220601},
 }
 
+--	PVP 商店每日刷新：返回当天（UTC 天数），跨天则清空购买次数
+local function GetPVPShopDay()
+    return math.floor(workspace:GetServerTimeNow() / 86400)
+end
+local function RefreshPVPShopData(tarData)
+    tarData.PVP = tarData.PVP or {}
+    local shop = tarData.PVP.Shop
+    if shop == nil then
+        shop = { Day = GetPVPShopDay(), Count = {} }
+        tarData.PVP.Shop = shop
+    elseif shop.Day ~= GetPVPShopDay() then
+        shop.Day = GetPVPShopDay()
+        shop.Count = {}
+    end
+    return shop
+end
+
+--	PVP 挑战次数：每 PVPCHALLENGE_RECOVER 秒恢复 1 次，最多 PVPCHALLENGE_MAXCOUNT
+local function RecoverPVPChallengeData(tarData)
+    tarData.PVP = tarData.PVP or {}
+    tarData.PVP.Challenge = tarData.PVP.Challenge or { Count = shared.Config.PVPCHALLENGE_MAXCOUNT, RecoverTime = 0 }
+    local challenge = tarData.PVP.Challenge
+    local now = workspace:GetServerTimeNow()
+
+    if challenge.Count < shared.Config.PVPCHALLENGE_MAXCOUNT and now >= challenge.RecoverTime then
+        local recoverCount = math.floor((now - challenge.RecoverTime) / shared.Config.PVPCHALLENGE_RECOVER + 1)
+        challenge.Count = math.min(shared.Config.PVPCHALLENGE_MAXCOUNT, challenge.Count + recoverCount)
+
+        if challenge.Count >= shared.Config.PVPCHALLENGE_MAXCOUNT then
+            challenge.RecoverTime = 0
+        else
+            challenge.RecoverTime += recoverCount * shared.Config.PVPCHALLENGE_RECOVER
+        end
+    end
+
+    return challenge
+end
+
 function self.Init(context)
     self.GetData = context.GetData
     self.SetPlayerData = context.SetPlayerData
     self.ItemModule = context.ItemModule
     self.TowerModule = context.TowerModule
+    self.TotemModule = context.TotemModule
 end
 
 function self.GetItem(player, itemId, amount)
@@ -250,6 +291,118 @@ function self.ClaimWeeklyDaily(player)
 
     self.SetPlayerData(player, {'WeeklyDaily', 'Cash'})
     ReplicatedStorage.Remote.Loot:FireClient(player, lootData)
+end
+
+--	PVP 胜利奖励：发放 Crystals，返回玩家当前的 Crystals 总数
+--	Coin.Crystals 为可花费余额；Profile.CrystalsTotal 为累计获得总量（只增不减，用于 PVP 匹配）
+function self.GivePVPReward(player, amount)
+    local tarData = self.GetData(player)
+    if not tarData then return nil end
+    if type(amount) ~= 'number' or amount <= 0 then return tarData.Coin.Crystals end
+
+    tarData.Coin.Crystals = (tarData.Coin.Crystals or 0) + amount
+    tarData.Profile.CrystalsTotal = (tarData.Profile.CrystalsTotal or 0) + amount
+
+    self.SetPlayerData(player, {'Crystals', 'Profile'})
+    return tarData.Coin.Crystals
+end
+
+--	玩家进入时刷新 PVP 商店的每日购买次数
+function self.RefreshPVPShop(player)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    RefreshPVPShopData(tarData)
+    self.SetPlayerData(player, 'PVPShop')
+end
+
+--	玩家进入时刷新 PVP 挑战次数
+function self.RefreshPVPChallenge(player)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    RecoverPVPChallengeData(tarData)
+end
+
+--	获取当前可用挑战次数（先结算恢复）
+function self.GetPVPChallenge(player)
+    local tarData = self.GetData(player)
+    if not tarData then return 0 end
+
+    return RecoverPVPChallengeData(tarData).Count
+end
+
+--	消耗一次挑战次数（战斗胜利时调用）
+function self.ConsumePVPChallenge(player)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    local challenge = RecoverPVPChallengeData(tarData)
+    if challenge.Count <= 0 then return end
+
+    challenge.Count -= 1
+    if challenge.RecoverTime == 0 and challenge.Count < shared.Config.PVPCHALLENGE_MAXCOUNT then
+        challenge.RecoverTime = workspace:GetServerTimeNow() + shared.Config.PVPCHALLENGE_RECOVER
+    end
+
+    self.SetPlayerData(player, 'PVPChallenge')
+end
+
+--	校验一次 PVP 购买：返回 (是否可购买, 本次消耗, 失败原因)
+function self.CheckPVPBuy(player, buttonName)
+    local tarData = self.GetData(player)
+    if not tarData then return false, nil, 'noData' end
+
+    local config = PVPData.GetPurchaseConfig(buttonName)
+    if config == nil then return false, nil, 'noConfig' end
+
+    local shop = RefreshPVPShopData(tarData)
+    local count = shop.Count[config.Key] or 0
+
+    local cost = PVPData.GetPurchaseValue(config.Key, count + 1)
+    if cost == nil then return false, nil, 'noValue' end
+    if (tarData.Coin.Crystals or 0) < cost then return false, cost, 'noCrystal' end
+
+    return true, cost
+end
+
+--	执行一次 PVP 购买：扣除 Crystals、累加购买次数、发放奖励并回包客户端
+function self.BuyPVPItem(player, buttonName)
+    local tarData = self.GetData(player)
+    if not tarData then return end
+
+    local config = PVPData.GetPurchaseConfig(buttonName)
+    if config == nil then return end
+
+    local shop = RefreshPVPShopData(tarData)
+    local count = shop.Count[config.Key] or 0
+
+    local cost = PVPData.GetPurchaseValue(config.Key, count + 1)
+    if cost == nil then return end
+    if (tarData.Coin.Crystals or 0) < cost then return end
+
+    tarData.Coin.Crystals -= cost
+    shop.Count[config.Key] = count + 1
+
+    if config.Type == 'Item' and config.ItemId ~= nil then
+        self.ItemModule.AddItem(tarData.Item, config.ItemId, 1)
+        ReplicatedStorage.Remote.Loot:FireClient(player, { Items = { [config.ItemId] = 1 } })
+    elseif config.Type == 'Totem' then
+        local totemUID = TotemData.Gacha()
+        if totemUID ~= nil then
+            --	与祈祷一致：只下发掉落，玩家 Claim 时服务端才入包
+            ReplicatedStorage.Remote.Tower.PrayTotem:FireClient(player, totemUID)
+        end
+    end
+
+    self.SetPlayerData(player, {'Crystals', 'Item', 'Totem'})
+
+    ReplicatedStorage.Remote.PVP.BuyResult:FireClient(player, {
+        Button = buttonName,
+        Key = config.Key,
+        Count = shop.Count[config.Key],
+        NextCost = PVPData.GetPurchaseValue(config.Key, shop.Count[config.Key] + 1),
+    })
 end
 
 return self

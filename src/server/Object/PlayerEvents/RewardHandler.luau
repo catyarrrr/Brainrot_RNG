@@ -3,6 +3,7 @@ local QuestData = require(ReplicatedStorage.Datas.QuestData :: ModuleScript)
 local TempData = require(ReplicatedStorage.Datas.TempData :: ModuleScript)
 local ItemData = require(ReplicatedStorage.Datas.ItemData :: ModuleScript)
 local SummonData = require(ReplicatedStorage.Datas.SummonData :: ModuleScript)
+local PVPData = require(ReplicatedStorage.Datas.PVPData :: ModuleScript)
 
 local self = {}
 
@@ -147,6 +148,26 @@ function self.ClaimWeeklyDaily(player)
 end
 function self.OpenWheelFrame(player)
 	shared.DataStore.GachaController.CheckWheel(player)
+end
+
+--	PVP 商店购买：校验按钮配置、每日购买次数与 Crystals 是否足够
+function self.BuyPVPItem(player, buttonName)
+    local playerData = shared.DataStore.GetData(player)
+    if playerData == nil then return end
+    if type(buttonName) ~= 'string' then return end
+
+    local config = PVPData.GetPurchaseConfig(buttonName)
+    if config == nil then return end
+
+    local chk, cost, reason = shared.DataStore.RewardController.CheckPVPBuy(player, buttonName)
+    if chk ~= true then
+        if reason == 'noCrystal' then
+            ReplicatedStorage.Remote.ServerWarn:FireClient(player, 'Not enough Crystals !!!')
+        end
+        return
+    end
+
+    shared.DataStore.RewardController.BuyPVPItem(player, buttonName)
 end
 
 return self

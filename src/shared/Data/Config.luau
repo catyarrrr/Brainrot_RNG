@@ -12,6 +12,14 @@ return {
     BOSSCHALLENGE_RECOVER = 4*60*60,
     BOSSCHALLENGE_MAXCOUNT = 3,
 
+    PVPCHALLENGE_RECOVER = 15*60,
+    PVPCHALLENGE_MAXCOUNT = 7,
+
+    PVPSTEAL_RATE = .1,
+    PVP_REWARD = { Easy = 3, Medium = 6, Hard = 9 },
+    --	击败机器人按难度补发对应分钟数的离线奖励现金
+    PVP_BOTCASH_MIN = { Easy = 15, Medium = 20, Hard = 25 },
+
     BACKPACK_MAXTOOL = 8,
 
 

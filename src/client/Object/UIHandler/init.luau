@@ -116,6 +116,9 @@ function self.start()
 	ReplicatedStorage.Remote.Tower.RollTrait.OnClientEvent:Connect(function(uid, traitId)
 		self.TraitUI.Trait(shared.PlayerDataHandler.GetData())
 	end)
+	ReplicatedStorage.Remote.PVP.Result.OnClientEvent:Connect(function(result)
+		if self.PVPUI then self.PVPUI:PlayResult(result) end
+	end)
 	ReplicatedStorage.Remote.ServerLuck.OnClientEvent:Connect(function(endtime)
 		while not self.InitCompleted do task.wait() end
 
@@ -338,6 +341,10 @@ function DataChangeUpdate(_, tag)
 	end
 	if tag and table.find(tag, 'Cash') then
 		CashFrameUpdate(playerData)
+		if self.PVPUI then self.PVPUI:RenderCrystal(playerData) end
+	end
+	if tag and table.find(tag, 'Crystals') then
+		if self.PVPUI then self.PVPUI:RenderCrystal(playerData) end
 	end
 	if tag and table.find(tag, 'Item') then
 		self.FuseUI.RefreshRequired()

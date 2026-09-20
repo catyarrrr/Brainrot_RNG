@@ -32,6 +32,9 @@ function self.init()
 	self:RegisterSound('PrayTotem', 'UI')
 	self:RegisterSound('FeedTotem', 'UI')
 
+	--	PVP 战斗音效（统一放在 Assets.Sounds.PVP 文件夹）
+	RegisterPVPSounds()
+
 	self:RegisterFolder('LobbyBGM', 'BGM')
 	self:RegisterFolder('BrainrotAction', 'UI')
 
@@ -245,6 +248,17 @@ end
 
 function RegisterAlienHitSound()
 	for _, sound in ReplicatedStorage.Assets.Sounds.BrainrotHit:GetChildren() do
+		if sound:IsA('Sound') then
+			self:RegisterInstance(sound, 'SFX')
+		end
+	end
+end
+
+function RegisterPVPSounds()
+	local folder = ReplicatedStorage.Assets.Sounds:FindFirstChild('PVP')
+	if folder == nil then warn('PVP sound folder not found'); return end
+
+	for _, sound in folder:GetChildren() do
 		if sound:IsA('Sound') then
 			self:RegisterInstance(sound, 'SFX')
 		end

@@ -3,6 +3,7 @@ return {
     Coin = {
         Cash = 10000,
         Gems = 0,
+        Crystals = 0,
         CashMultiplier = 1,
         VipMultiplier = 1
     },
@@ -35,6 +36,17 @@ return {
 
     Item = {
         Inv = {
+        },
+    },
+
+    PVP = {
+        Shop = {
+            Day = 0,
+            Count = {},
+        },
+        Challenge = {
+            Count = 7,
+            RecoverTime = 0,
         },
     },
 
@@ -78,6 +90,7 @@ return {
         PlaceVersion = 0,
         OfflineReward = {Items = {}, Cash = 0, },
         IsNew = true,
+        PVPDeploy = {},
         LoginReward = {
             Day = 1,
             LastLoginDay = 0,
@@ -95,7 +108,8 @@ return {
         MaxChallenge = 1,
         StartLevel = 1,
         CardLevel = 1,
-        Spend = 0
+        Spend = 0,
+        CrystalsTotal = 0,
     },
 
     Guide = {
