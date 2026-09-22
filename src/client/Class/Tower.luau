@@ -9,7 +9,7 @@ local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local CheckAlienMerge, New, Destroy, UpdateAnimationVisibility = nil
 local towerPlacements, PlayerTowers, VisualTask, TowerList, myTowers = {}, {}, {}, {}, {}
 local VIEW_DISTANCE = 300
-local Class : any = {collections = {}, }
+local Class : any = {collections = {}, PotatoMode = false, }
 Class.__index = Class
 
 function Class.init()
@@ -273,6 +273,7 @@ function Class:SetAnimationsActive(active)
 	end
 end
 function Class:PlayAttack()
+	if Class.PotatoMode and self.Owner ~= Players.LocalPlayer then return end
 	if self.InView and self.AttackAnimationTrack then
 		self.AttackAnimationTrack:Play()
 	end
@@ -284,12 +285,27 @@ function UpdateAnimationVisibility()
 			if tower.Destroyed then continue end
 
 			local inView = tower:IsInView(camera)
+			if Class.PotatoMode and tower.Owner ~= Players.LocalPlayer then
+				inView = false
+			end
 			if inView ~= tower.InView then
 				tower.InView = inView
 				tower:SetAnimationsActive(inView)
 			end
 		end
 		task.wait(0.25)
+	end
+end
+--	土豆模式：停止播放其他玩家防御塔的动画（本人防御塔不受影响）
+function Class.SetPotatoMode()
+	Class.PotatoMode = true
+
+	for _, tower in ipairs(TowerList) do
+		if tower.Destroyed then continue end
+		if tower.Owner == Players.LocalPlayer then continue end
+
+		tower.InView = false
+		tower:SetAnimationsActive(false)
 	end
 end
 --#endregion

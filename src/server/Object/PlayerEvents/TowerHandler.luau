@@ -25,6 +25,7 @@ function self.SpawnTower(player, uid, towerName, cframe: CFrame, towerUID, gridX
 
 	local isUpgrade = true
 	local curUID = shared.DataStore.GridController.GetUIDByGrid(player, gridXY)
+	if curUID ~= nil and curUID == uid then warn('can not merge a tower into itself'); return end
 	local curTowerUID = curUID and shared.DataStore.TowerController.GetTowerUIDByUID(player, curUID)
 	if curTowerUID == nil or curTowerUID ~= towerUID then isUpgrade = false end
 	local nextTowerUID = curTowerUID and TowerData.GetTowerNext(curTowerUID)
@@ -82,6 +83,7 @@ function self.EquipTower(player, isEquip, tool)
 	end
 end
 function self.UpgradeTower(player, uid, deleteUID)
+	if uid == deleteUID then warn('can not merge a tower into itself'); return end
 	local targetTower = shared.Tower.GetByUID(uid)
 	if not targetTower then warn('fetch tower error for uid:', uid); return end
 
@@ -269,6 +271,7 @@ function self.QuickMerge(player, id)
 	if tool:GetAttribute('TowerUID') ~= tower.TowerUID or tower.Owner ~= player then warn('data error for merge'); return end
 	local deleteUID = tool:GetAttribute('UID')
 	if deleteUID == nil then warn('delete uid not found for id:', id); return end
+	if deleteUID == tower.UID then warn('can not merge a tower into itself'); return end
 	tool:Destroy()
 
 	rs.Remote.Tower.TowerUpgrade:FireClient(player, tower.CFrame)

@@ -4,7 +4,7 @@ local TweenService = game:GetService("TweenService")
 local TowerData = require(ReplicatedStorage.Datas.TowerData :: ModuleScript)
 local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
 
-local CardSlot = ReplicatedStorage.Assets.UI.CardSlot
+local CardSlot = ReplicatedStorage.Assets.UI.CardSlot_PVP
 
 --==============================================================================
 -- 常量与共享状态
@@ -133,6 +133,15 @@ function self:Start(fightFrame, result, onFinished)
     state.EnemyList = result.Enemy or {}
     if state.Container == nil then warn('[PVP Battle] Battle container not found'); return end
 
+    --	右侧名字显示对手：真玩家显示其名字，机器人显示 Bot
+    local vs = state.Container:FindFirstChild('VS')
+    if vs ~= nil then
+        local nameTextR = vs:FindFirstChild('NameTextR')
+        if nameTextR ~= nil then
+            nameTextR.Text = result.EnemyName or (result.Kind == 'Bot' and 'Bot') or 'Opponent'
+        end
+    end
+
     state.LeftHolder = state.Container:FindFirstChild('L1')
     state.RightHolder = state.Container:FindFirstChild('R1')
     state.LeftCard = nil
@@ -205,13 +214,13 @@ function self:ClearCard(side)
     if side == 'L' then state.LeftCard = nil else state.RightCard = nil end
 end
 
--- 按品质克隆 Assets.UI.CardSlot 作为卡面
+-- 按品质克隆 Assets.UI.CardSlot_PVP 作为卡面
 function self:CreateCard(side, quality)
     self:ClearCard(side)
     local holder = side == 'L' and state.LeftHolder or state.RightHolder
     if holder == nil then return nil end
 
-    local template = CardSlot:FindFirstChild('Card' .. tostring(quality)) or CardSlot:FindFirstChild('CardCommon')
+    local template = CardSlot:FindFirstChild(tostring(quality)) or CardSlot:FindFirstChild('Common')
     if template == nil then return nil end
 
     local card = template:Clone()
@@ -219,18 +228,6 @@ function self:CreateCard(side, quality)
     card.AnchorPoint = Vector2.new(.5, .5)
     card.Position = UDim2.fromScale(.5, .5)
     card.Size = UDim2.fromScale(1, 1)
-
-    --	战斗卡面只保留名字/图标：隐藏棋盘用的星级与收益文字
-    local label = card:FindFirstChild('Frame') and card.Frame:FindFirstChild('Label')
-    if label ~= nil then
-        local line = label:FindFirstChild('Line')
-        if line ~= nil then line.Visible = false end
-        local mutations = label:FindFirstChild('Mutations')
-        if mutations ~= nil then
-            for _, mutation in ipairs(mutations:GetChildren()) do mutation.Visible = false end
-        end
-    end
-
     card.Parent = holder
 
     if side == 'L' then state.LeftCard = card else state.RightCard = card end
@@ -337,6 +334,10 @@ function self:SetFighter(side)
             local image = GetIcon(info.TowerUID)
             if image then icon.Image = image end
         end
+        local dmgText = label:FindFirstChild('DMG')
+        if dmgText then dmgText.Text = 'ATT: ' .. shared.Tool.FormatNumber(math.floor(info.DPS or 0)) end
+        local hpText = label:FindFirstChild('HP')
+        if hpText then hpText.Text = 'HP: ' .. shared.Tool.FormatNumber(math.max(0, math.floor(hp))) end
     end
 end
 
@@ -364,6 +365,31 @@ local HIT_FLASH_COLOR = Color3.fromRGB(255, 255, 255)
 local HIT_FLASH_TRANSPARENCY = .35
 local HIT_FLASH_TIME = .2
 
+-- 对撞瞬间的整体晃动（衰减）
+local CLASH_SHAKE_AMPLITUDE = 10       -- 最大偏移像素
+local CLASH_SHAKE_STEPS = 8            -- 抖动次数
+local CLASH_SHAKE_STEP = .018          -- 每次间隔（秒）
+
+-- 撞击瞬间：让 Battle 容器做短促的衰减抖动
+function self:ShakeContainer()
+    local container = state.Container
+    if container == nil then return end
+
+    local rest = container.Position
+    local token = state.Token
+    task.spawn(function()
+        for i = CLASH_SHAKE_STEPS, 1, -1 do
+            if container.Parent == nil or state.Token ~= token then return end
+            local decay = i / CLASH_SHAKE_STEPS
+            local dx = math.random(-CLASH_SHAKE_AMPLITUDE, CLASH_SHAKE_AMPLITUDE) * decay
+            local dy = math.random(-CLASH_SHAKE_AMPLITUDE, CLASH_SHAKE_AMPLITUDE) * decay
+            container.Position = UDim2.new(rest.X.Scale, rest.X.Offset + dx, rest.Y.Scale, rest.Y.Offset + dy)
+            task.wait(CLASH_SHAKE_STEP)
+        end
+        if container.Parent ~= nil then container.Position = rest end
+    end)
+end
+
 -- 相撞表现：双方朝中间冲刺撞击，弹出伤害数字并晃动，随后各自归位
 function self:PlayClash(turn)
     local leftHolder = state.LeftHolder
@@ -380,6 +406,9 @@ function self:PlayClash(turn)
     end
 
     task.wait(CLASH_TIME)
+
+    -- 撞击瞬间：整体晃动
+    self:ShakeContainer()
 
     -- 命中飘字：我方伤害落在敌方卡牌上，敌方伤害落在我方卡牌上
     if turn.Enemy ~= nil then

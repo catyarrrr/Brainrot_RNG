@@ -140,6 +140,8 @@ function Class:Start(endRound, multi, startRound)
 		self.EndRound = endRound
 		self.Rush = multi
 		if self.Rush then self.Round = 1 end
+		---	清理该路径上残留的怪（例如上个玩家中途退出遗留），否则 Rush 会永远等不到“清完怪”
+		shared.Enemy.ClearByPathId(self.PathId)
 		self:ResetHealth()
 
 		self:SetState('BeforeSpawning')
@@ -160,12 +162,12 @@ function Class:Start(endRound, multi, startRound)
 
 				-- 仅在valid为true时可以切换状态
 				if self.Valid == true then 
-					if self.State.name == 'InRound' and shared.Enemy.CheckEnemiesClearByPathId(self.PathId) == true and self.Round == self.EndRound then
+					if self.State.name == 'InRound' and shared.Enemy.CheckEnemiesClearByPathId(self.PathId, self) == true and self.Round == self.EndRound then
 						---		当前为回合为最后回合且怪物数量为0
 						self:GameWin()
 						return
 
-					elseif self.State.name == 'InRound' and shared.Enemy.CheckEnemiesClearByPathId(self.PathId) == true then
+					elseif self.State.name == 'InRound' and shared.Enemy.CheckEnemiesClearByPathId(self.PathId, self) == true then
 						---		当前为回合内状态且怪物数量为0
 						self:SetState(self.State.next)
 						-- print('next round')
@@ -240,6 +242,9 @@ function Class:Destroy()
 		task.cancel(self.StateTask)
 		self.StateTask = nil
 	end
+
+	---	玩家退出时清掉本路径的怪，避免残留给下一个拿到该路径的玩家
+	shared.Enemy.ClearByPathId(self.PathId)
 
 	collections[self.Player] = nil
 	Class.loaded[self.Player] = nil

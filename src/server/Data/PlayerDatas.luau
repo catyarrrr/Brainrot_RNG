@@ -110,6 +110,7 @@ return {
         CardLevel = 1,
         Spend = 0,
         CrystalsTotal = 0,
+        PVPRank = 0,
     },
 
     Guide = {

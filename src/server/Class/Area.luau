@@ -18,6 +18,7 @@ function Class.init()
 	Class.UpgradeEvent = shared.Event.new()
 	Class.NextMapEvent = shared.Event.new()
 	Class.PrayEvent = shared.Event.new()
+	Class.UpdateEvent = shared.Event.new()
 end
 
 function Class.start()
@@ -59,6 +60,19 @@ function Class.start()
 		if map == area.Map then return end
 		area:SwitchMap(map)
 	end, Class)
+
+	Class.UpdateEvent:Connect(function(_, player, config, pathId)
+		while Class.Initiated == nil do task.wait() end
+		
+		local data = shared.DataStore.GetData(player)
+		if data == nil then return end
+		local area = Class.collections[pathId]
+		if area == nil then return end
+		if config.Cardrottini then
+			area.OwnerFrame.Cardrottini.Text = string.format('Cardrottini: %d', data.Profile.CrystalsTotal)
+		end
+	end)
+
 	shared.Tower.SpawnEvent:Connect(function(_, player, pathId) 
 		while Class.Initiated == nil do
 			task.wait()
@@ -182,9 +196,10 @@ function Class:Enter(data, plr)
 	)
 	if isReady then self.OwnerFrame.OwnerIcon.Image = content end
 	self.MaxLevel = data.Profile.MaxLevel
-	self.OwnerFrame.BestWave.Text = string.format('Best Wave: %d', self.MaxLevel)
+	self.OwnerFrame.BestWave.Text = string.format('Best Wave:%d', self.MaxLevel)
 	self.MaxChallenge = data.Profile.MaxChallenge
-	self.OwnerFrame.BossChallenge.Text = string.format('Boss Challenge: %d', self.MaxChallenge)
+	self.OwnerFrame.BossChallenge.Text = string.format('Boss Challenge:%d', self.MaxChallenge)
+	self.OwnerFrame.Cardrottini.Text = string.format('Cardrottini: %d', data.Profile.CrystalsTotal)
 
 	-- local equippedTotems = {}
 	-- if data.Totem then
@@ -441,6 +456,7 @@ function Class:UpdateTotem(equippedTotems)
 end
 
 function Class:Reset()
+	self.Owner = nil
 	self.OwnerFrame.Enabled = false
 	self.DPSGui.DPS.Text = '0'
 
@@ -492,11 +508,11 @@ function UpdateAreaBest(player, pathId, round, rush)
 	if rush then
 		if round > area.MaxChallenge then
 			area.MaxChallenge = round
-			area.OwnerFrame.BossChallenge.Text = string.format('Boss Challenge: %d', area.MaxChallenge)
+			area.OwnerFrame.BossChallenge.Text = string.format('Boss Challenge:%d', area.MaxChallenge)
 		end
 	elseif round > area.MaxLevel then
 		area.MaxLevel = round
-		area.OwnerFrame.BestWave.Text = string.format('Best Wave: %d', area.MaxLevel)
+		area.OwnerFrame.BestWave.Text = string.format('Best Wave:%d', area.MaxLevel)
 	end
 end
 

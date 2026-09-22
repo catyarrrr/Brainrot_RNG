@@ -104,8 +104,12 @@ function Class:ModifyHealth(amount, owner, cash)
 
 	if self.Health <= 0 then
 		if self.Type ~= 'Rush' then self.Game:Farm(self.Reward * (cash or 1)) end
-		TryLoot(self)
+		---	先从 pathEnemies 注销，确保发奖/存档（TryLoot）yield 或报错时不会阻塞回合推进
 		self:Destroy()
+		task.spawn(function()
+			local ok, err = pcall(TryLoot, self)
+			if not ok then warn('TryLoot error:', err) end
+		end)
 	end
 end
 
@@ -141,13 +145,28 @@ end
 function Class.GetCharactersCount()
 	return #enemies
 end
-function Class.CheckEnemiesClearByPathId(pathId)
-	local chk = true
-	if pathEnemies[pathId] and next(pathEnemies[pathId]) ~= nil then
-		chk = false
+function Class.CheckEnemiesClearByPathId(pathId, game)
+	local list = pathEnemies[pathId]
+	if list == nil then return true end
+
+	for _, enemy in ipairs(list) do
+		---	传了 game 时，只统计属于当前这局的怪，忽略残留怪
+		if game == nil or enemy.Game == game then
+			return false
+		end
 	end
 
-	return chk
+	return true
+end
+function Class.ClearByPathId(pathId)
+	local list = pathEnemies[pathId]
+	if list == nil then return end
+
+	---	先置 nil，避免销毁过程中被 CheckEnemiesClearByPathId/重复销毁影响
+	pathEnemies[pathId] = nil
+	for i = #list, 1, -1 do
+		list[i]:Destroy()
+	end
 end
 
 function GetDamageByType(type)
@@ -166,12 +185,7 @@ function GetDamageByType(type)
 	return damage
 end
 function ClearAll(_, _, pathId)
-	if pathEnemies[pathId] == nil then return end
-	for i = #pathEnemies[pathId], 1, -1 do
-		pathEnemies[pathId][i]:Destroy()
-	end
-
-	pathEnemies[pathId] = nil
+	Class.ClearByPathId(pathId)
 end
 function GetReward(round, type)
 	local baseReward = 10 * round
@@ -186,7 +200,9 @@ function TryLoot(self)
 			local time = shared.CalculateData.GetBossDrop(curRound)
 			for i=1, time do
 				local key = ItemData.GetRushItemByRound(curRound)
-				loots[key] = (loots[key] or 0) + 1
+				if key ~= nil then
+					loots[key] = (loots[key] or 0) + 1
+				end
 			end
 
 			for k, v in loots do

@@ -115,7 +115,13 @@ end
 --	记录对手并签发一次性 token，返回给客户端展示的候选信息
 local function IssueToken(player, candidate, enemy)
 	local token = HttpService:GenerateGUID(false)
-	sessions[player].Tokens[token] = { Enemy = enemy, Difficulty = candidate.Difficulty, UserId = candidate.UserId }
+	sessions[player].Tokens[token] = {
+		Enemy = enemy,
+		Difficulty = candidate.Difficulty,
+		UserId = candidate.UserId,
+		Name = candidate.Name,
+		Kind = candidate.Kind,
+	}
 	candidate.Id = token
 	return candidate
 end

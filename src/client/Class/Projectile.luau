@@ -155,6 +155,15 @@ function InitProjectile()
 
 				shared.VFXHandler.ParticleModule.ToggleVisual(template, true)
 				shared.ObjectPool.Create(name, template, 1, 'TowerProjectile')
+
+			elseif tower.Visual == 4 then
+				local name = 'BR' .. tostring(towerType) .. 'VFX'
+
+				local template = ReplicatedStorage.Assets.Particles:FindFirstChild(name)
+				if template == nil then continue end
+
+				shared.ObjectPool.Create(name, template, 1, 'TowerProjectile')
+
 			end
 		end
 	end

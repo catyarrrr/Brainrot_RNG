@@ -31,6 +31,12 @@ function self.Init(frame)
     self.Frame = self.Main.Frame.UI
     self.Frame.Visible = true
     self.CrystalFrame = self.Frame.CrystalsCount
+    self.ProfileFrame = self.Frame.Profile.Frame
+    self.CrystalsTotalLabel = self.ProfileFrame:FindFirstChild('CrystalsTotal')
+    self.RankingLabel = self.ProfileFrame:FindFirstChild('Ranking')
+    --	离线被 PVP 偷取的提示列表（离线偷取只有一条，上线时由服务端下发）
+    self.StoleFrame = self.ProfileFrame:FindFirstChild('stoleMessage')
+    self.StealNotices = self.StealNotices or {}
     self.SlotFrame = self.Frame.Main
     self.SlotFrame.Visible = true
     self.SlotScrolling = self.SlotFrame.ScrollingFrame
@@ -85,8 +91,12 @@ function self.Init(frame)
         shared.SoundHandler:Play('UI_Success')
         self.SlotFrame.Visible = false
         self.FightChoose.Visible = true
-        self.Opponents = nil
-        self:RefreshOpponents()
+        --	已有对手列表时直接复用，只有 Switch 才刷新；避免 Fight/Back 反复触发服务端请求
+        if self.Opponents == nil then
+            self:RefreshOpponents()
+        else
+            self:RenderOpponents()
+        end
     end)
     self.FightChoose.Buttons.Back.MouseButton1Click:Connect(function()
         shared.SoundHandler:Play('UI_Fail')
@@ -158,6 +168,7 @@ function self.Update(playerData)
     end
     self:RefreshSlots()
     self:RenderCrystal(playerData)
+    self:RenderProfile(playerData)
     self:RefreshItemCosts(playerData)
     self:UpdateChallenge(playerData)
 end
@@ -184,6 +195,60 @@ function self:RenderCrystal(playerData)
     playerData = playerData or shared.PlayerDataHandler.GetData()
     if playerData == nil or playerData.Coin == nil then return end
     self.CrystalFrame.CrystalsCountText.Text = shared.VFXHandler.FormatNumber(playerData.Coin.Crystals or 0)
+end
+
+--	展示累计 Crystals 与自己的排名
+function self:RenderProfile(playerData)
+    playerData = playerData or shared.PlayerDataHandler.GetData()
+    if playerData == nil then return end
+
+    if self.CrystalsTotalLabel ~= nil then
+        local total = (playerData.Profile and playerData.Profile.CrystalsTotal) or 0
+        self.CrystalsTotalLabel.Text = 'Cardrottini: ' .. shared.VFXHandler.FormatNumber(total)
+    end
+    if self.RankingLabel ~= nil then
+        local rank = playerData.Profile and playerData.Profile.PVPRank
+        self.RankingLabel.Text = 'My Ranking:' .. ((type(rank) == 'number' and rank > 0) and tostring(rank) or '--')
+    end
+
+    self:RenderStealNotice()
+end
+
+--	新增一条离线被偷提示（最新的排前面，最多保留 4 条）
+function self:AddStealNotice(info)
+    if type(info) ~= 'table' then return end
+
+    self.StealNotices = self.StealNotices or {}
+    table.insert(self.StealNotices, 1, info)
+    while #self.StealNotices > 4 do
+        table.remove(self.StealNotices)
+    end
+
+    self:RenderStealNotice()
+end
+
+--	把偷取提示逐行写进 stoleMessage 的面板里，多余的 label 隐藏
+function self:RenderStealNotice()
+    local frame = self.StoleFrame
+    if frame == nil then return end
+
+    local labels = {}
+    for _, child in ipairs(frame:GetChildren()) do
+        if child:IsA('TextLabel') then
+            table.insert(labels, child)
+        end
+    end
+
+    local notices = self.StealNotices or {}
+    for index, label in ipairs(labels) do
+        local info = notices[index]
+        if info ~= nil then
+            label.Text = string.format('%s stole $%s from you in PVP!', tostring(info.From), shared.VFXHandler.FormatNumber(info.Amount or 0))
+            label.Visible = true
+        else
+            label.Visible = false
+        end
+    end
 end
 
 --	初始化 PVP 商店的 5 个购买按钮
@@ -214,6 +279,7 @@ function self:InitItemShop()
     shared.PlayerDataHandler.DataChangedEvent:Connect(function()
         self:RefreshItemCosts()
         self:UpdateChallenge()
+        self:RenderProfile()
     end)
 
     task.spawn(function()
@@ -575,8 +641,15 @@ end
 --	收到服务端战斗结果后交给 FightUI 播放战斗动画
 function self:PlayResult(result)
     self.Fighting = false
+    --	离线被偷提示复用同一通道下发；这里只入库，不播放战斗
+    if type(result) == 'table' and result.Steal ~= nil then
+        self:AddStealNotice(result.Steal)
+        return
+    end
     if result == nil or result.Ally == nil or result.Enemy == nil then return end
 
+    --	本局已消耗一个对手 token，清空列表让下次进入面板重新拉取
+    self.Opponents = nil
     self.Frame.Visible = false
     local fightUI = shared.UIHandler.FightUI
     if fightUI == nil then return end

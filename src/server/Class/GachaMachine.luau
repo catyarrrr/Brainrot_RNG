@@ -5,6 +5,8 @@ local AssetsData = require(ReplicatedStorage.Datas.AssetsData :: ModuleScript)
 local SummonData = require(ReplicatedStorage.Datas.SummonData :: ModuleScript)
 local TempData = require(ReplicatedStorage.Datas.TempData :: ModuleScript)
 
+local BestParticle = ReplicatedStorage.Assets.Particles:FindFirstChild('Best')
+
 local Class, collections = {Initiated = false, PendingAlien = {}}, {}
 Class.__index = Class
 
@@ -53,9 +55,21 @@ function New(model)
         print(player)
     end)
     self.LuckLabel = self.LuckGui.Luckpoint.LuckpointText
+    -- 破纪录粒子预先摆放在三个出塔位置，需要时 emit
+    -- 注意不能挂在 model.SpawnPos 下，否则会被 roll 的 EnableParticle 一起点亮
     self.SpawnPos = {}
-    for k, v in model.SpawnPos:GetChildren() do
+    self.BestParticles = {}
+    for index, v in model.SpawnPos:GetChildren() do
         table.insert(self.SpawnPos, v.WorldCFrame)
+        if BestParticle then
+            local particle = BestParticle:Clone()
+            for _, d in particle:GetDescendants() do
+                if d:IsA('ParticleEmitter') then d.Enabled = false end
+            end
+            particle:PivotTo(v.WorldCFrame + Vector3.new(0, 3, 0))
+            particle.Parent = model
+            self.BestParticles[index] = particle
+        end
     end
     self.Rolling = false
 
@@ -143,11 +157,18 @@ function Class:Gacha(player)
 
     self.Towers = {}
     local fastRoll = playerData.VIP.FastRoll
+    local bestDPS, bestIndex = 0, nil
     for index, towerUID in towers do
         local tower = TowerData.GetData(towerUID)
         local assets = AssetsData[tower.AssetId]
         local model, offset = InitTowerModel(assets, tower)
         offset = offset or CFrame.new(0, 0, 0)
+
+        local curDPS = shared.CalculateData.GetDPS(tower.Damage, tower.ActionDelay)
+        if curDPS > bestDPS then
+            bestDPS = curDPS
+            bestIndex = index
+        end
         if fastRoll then
             model:PivotTo(self.SpawnPos[index] * offset)
         else
@@ -180,7 +201,34 @@ function Class:Gacha(player)
         end)
     end
 
+    if bestDPS > 0 then
+        self:EmitBestDPS(player, bestDPS, bestIndex)
+    end
+
     self:Update()
+end
+
+-- 本批最高 DPS 超过玩家背包历史最高 DPS 时，在对应出塔位置触发粒子（比较均不计 trait 影响）
+function Class:EmitBestDPS(player, rolledDPS, index)
+    if rolledDPS <= 0 or index == nil then return end
+    local particle = self.BestParticles and self.BestParticles[index]
+    if particle == nil then return end
+
+    local playerData = shared.DataStore.GetData(player)
+    if playerData == nil or playerData.Tower == nil or playerData.Tower.Inv == nil then return end
+
+    local bestOwned = 0
+    for _, tower in pairs(playerData.Tower.Inv) do
+        local stats = TowerData.GetCloneData(tower.TowerUID)
+        if stats ~= nil then
+            local dps = shared.CalculateData.GetDPS(stats.Damage, stats.ActionDelay)
+            if dps > bestOwned then bestOwned = dps end
+        end
+    end
+
+    if rolledDPS <= bestOwned then return end
+
+    task.delay(3.5, function() shared.VFXHandler.EmitParticle(particle, 4) end)
 end
 
 function Class:Clear()

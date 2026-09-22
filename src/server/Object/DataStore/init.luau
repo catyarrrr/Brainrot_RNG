@@ -105,14 +105,18 @@ function self.PlayerEnter(player)
     self.PlayerDataLoadedEvent:Fire(player, defaultData.Tower.Inv)
 	ReplicatedStorage.Remote.SetPlayerData:FireClient(player, defaultData)
     task.spawn(UpdatePlayerPasses, player)
+    task.spawn(function() shared.PVPRankBoard.RefreshRank(player) end)
 
-    --	PVP 被偷记录：上线后在聊天框提示
+    --	PVP 被偷记录（离线被偷）：上线后在聊天框提示，并在 PVP 面板的 stoleMessage 里展示
     local notice = defaultData.States and defaultData.States.PVPStealNotice
     if type(notice) == 'table' then
         local text = string.format('%s stole $%s from you in PVP!', tostring(notice.From), shared.Tool.FormatNumber(notice.Amount or 0))
         task.delay(6, function()
             if player.Parent == nil then return end
             ReplicatedStorage.Remote.ServerMessage:FireClient(player, text)
+            ReplicatedStorage.Remote.PVP.Result:FireClient(player, {
+                Steal = { Amount = notice.Amount, From = notice.From },
+            })
             defaultData.States.PVPStealNotice = nil
         end)
     end

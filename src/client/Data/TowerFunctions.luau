@@ -106,6 +106,25 @@ local PlayVisual = function(tower, enemy)
 	elseif tower.Visual == 3 then
 		local projectileName = 'BR' .. tostring(towerType) .. 'Beam'
 		shared.Projectile.BeamFireEvent:Fire(projectileName, att.WorldCFrame.Position, enemy.Model.Torso, PROJECTILE_TICKS)
+	elseif tower.Visual == 4 then
+		local vfxName = 'BR' .. tostring(towerType) .. 'VFX'
+		local model = shared.ObjectPool.Get(vfxName)
+		if model == nil then return end
+
+		--- 生成在目标面前并正对目标
+		local targetPos = enemy.Model.Torso.Position
+		local look = enemy.Model:GetPivot().LookVector
+		local flatLook = Vector3.new(look.X, 0, look.Z)
+		if flatLook.Magnitude > 0 then flatLook = flatLook.Unit end
+		model:PivotTo(CFrame.lookAt(targetPos + flatLook * 6, targetPos))
+
+		--- 播放模型自带动画
+		local track = shared.AnimationHandler.GetAnimationTrack(model)
+		if track then track:Play() end
+		task.delay(1, function()
+			if track then track:Stop() end
+			shared.ObjectPool.Return(vfxName, model)
+		end)
 	end
 		
 end

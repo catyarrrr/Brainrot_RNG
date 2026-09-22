@@ -186,6 +186,23 @@ function self.TopBarInit(playerData)
 	if playerData.States.PlaceVersion ~= game.PlaceVersion then
 		self.AnnouncementsTopBar:notify()
 	end
+
+	self.SettingsTopBar = TopBar.new()
+	self.SettingsTopBar:align('Right')
+	self.SettingsTopBar:setImage('rbxassetid://9405931578')
+	self.SettingsTopBar:setImageScale(.8)
+	self.SettingsTopBar:setCaption('Settings')
+	self.SettingsTopBar:setDropdown({
+		TopBar.new()
+			:setLabel('Potato(Irreversible)')
+			:bindEvent('deselected', function()
+				local lighting = game:GetService('Lighting')
+				lighting.GlobalShadows = false
+				shared.VFXHandler.SetPotatoMode()
+				shared.Tower.SetPotatoMode()
+			end)
+			:oneClick(true)
+	})
 end
 
 function UIInit()

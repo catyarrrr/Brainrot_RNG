@@ -30,6 +30,9 @@ local rng = Random.new()
 
 
 function self.init()
+	self.PotatoMode = false
+	self.MutParticles = {}
+
 	self.ParticleModule = require(script.Particles)
 	self.ParticleModule.Init()
     self.BadgeModule = require(script.Badge) :: ModuleScript
@@ -273,6 +276,8 @@ function GenerateTowerGui(_, _, towerUID, _, _, _, parent)
 end
 -- 塔突变效果
 function self.GenerateMutParticle(_, towerUID, model)
+	if self.PotatoMode then return end
+
 	local rig = model:FindFirstChildOfClass('Model')
 	local mutId = TowerData.GetMutIdByTowerUID(towerUID)
     if mutId > 1 then
@@ -291,7 +296,22 @@ function self.GenerateMutParticle(_, towerUID, model)
 
         particle:PivotTo(CFrame.new(center))
         particle.Parent = model
+
+        self.MutParticles[model] = particle
+        model.Destroying:Once(function()
+            self.MutParticles[model] = nil
+        end)
     end
+end
+
+-- 土豆模式：停止生成突变特效，并清理已经生成的突变特效
+function self.SetPotatoMode()
+	self.PotatoMode = true
+
+	for model, particle in pairs(self.MutParticles) do
+		if particle then particle:Destroy() end
+		self.MutParticles[model] = nil
+	end
 end
 
 -- 抽塔模型

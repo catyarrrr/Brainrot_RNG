@@ -16,16 +16,32 @@ local BOARD_STORE = 'PVPCrystalTotal'
 local ARCHIVE_STORE, ARCHIVE_SCOPE = 'PlayerData', 'global'
 local MIRROR_INTERVAL = 60
 local TEAM_CACHE_TTL = 5 * 60
+local CANDIDATE_CACHE_TTL = 20
+local CANDIDATE_CACHE_MAX = 200
 local MAX_DEPLOY = 4
 local MAX_CANDIDATE_FETCH = 50
+local RANK_PAGE = 100
+local RANK_SCAN_MAX = 2000
 
 local self : any = {}
 
 --	userId -> { Team = {...}, CachedAt = number }
 local teamCache = {}
 
+--	分数区间 -> { List = {...}, CachedAt = number }，降低刷新对手时的 DataStore 请求量
+local candidateCache = {}
+local candidateCacheCount = 0
+
+--	塔是否仍存在于当前静态数据：对手存档里可能残留已下架的塔，直接查表避免 GetCloneData 报警
+local function TowerExists(towerUID)
+	local dict = TowerData.Datas and TowerData.Datas.TowerDict
+	return type(dict) == 'table' and dict[towerUID] ~= nil
+end
+
 --	单个塔的 DPS（含 trait 修正）
 function self.GetTowerDPS(towerUID, traitId)
+	if not TowerExists(towerUID) then return 0 end
+
 	local stats = TowerData.GetCloneData(towerUID)
 	if stats == nil then return 0 end
 
@@ -38,6 +54,7 @@ local function BuildTeamFromArchive(archive)
 	local list = {}
 	for _, towerData in pairs(archive.Tower.Inv) do
 		if type(towerData) ~= 'table' or type(towerData.TowerUID) ~= 'number' then continue end
+		if not TowerExists(towerData.TowerUID) then continue end
 		table.insert(list, {
 			TowerUID = towerData.TowerUID,
 			DPS = self.GetTowerDPS(towerData.TowerUID, towerData.Trait),
@@ -77,8 +94,41 @@ function self.ReadTeam(userId)
 	return team, cash
 end
 
---	按分数区间查询候选玩家，返回 { UserId, Total }
+local function CopyList(list)
+	local copy = {}
+	for index, entry in ipairs(list) do
+		copy[index] = entry
+	end
+	return copy
+end
+
+--	缓存过多时先清理过期项，仍超限则整体清空，避免无限增长
+local function PruneCandidateCache(now)
+	if candidateCacheCount < CANDIDATE_CACHE_MAX then return end
+
+	for key, entry in pairs(candidateCache) do
+		if (now - entry.CachedAt) >= CANDIDATE_CACHE_TTL then
+			candidateCache[key] = nil
+			candidateCacheCount -= 1
+		end
+	end
+
+	if candidateCacheCount >= CANDIDATE_CACHE_MAX then
+		candidateCache = {}
+		candidateCacheCount = 0
+	end
+end
+
+--	按分数区间查询候选玩家，返回 { UserId, Total }；同区间短期内复用缓存
 function self.QueryCandidates(lo, hi, limit)
+	local now = os.time()
+	local key = string.format('%d:%d:%d', math.floor(lo), math.ceil(hi), limit)
+
+	local cached = candidateCache[key]
+	if cached ~= nil and (now - cached.CachedAt) < CANDIDATE_CACHE_TTL then
+		return CopyList(cached.List)
+	end
+
 	local success, pages = pcall(function()
 		return DataStoreService:GetOrderedDataStore(BOARD_STORE):GetSortedAsync(
 			false, math.min(limit, MAX_CANDIDATE_FETCH), math.max(0, math.floor(lo)), math.ceil(hi))
@@ -92,6 +142,10 @@ function self.QueryCandidates(lo, hi, limit)
 			table.insert(result, { UserId = userId, Total = entry.value })
 		end
 	end
+
+	PruneCandidateCache(now)
+	if candidateCache[key] == nil then candidateCacheCount += 1 end
+	candidateCache[key] = { List = CopyList(result), CachedAt = now }
 	return result
 end
 
@@ -104,6 +158,39 @@ function self.UpdateEntry(player)
 		DataStoreService:GetOrderedDataStore(BOARD_STORE):SetAsync(
 			tostring(player.UserId), math.floor(playerData.Profile.CrystalsTotal or 0))
 	end)
+end
+
+--	按累计 Crystals 计算排名（高于自己的玩家数 + 1）；扫描超过上限返回 nil
+function self.GetRank(total)
+	total = math.floor(total or 0)
+	local success, pages = pcall(function()
+		return DataStoreService:GetOrderedDataStore(BOARD_STORE):GetSortedAsync(false, RANK_PAGE, total + 1, nil)
+	end)
+	if success ~= true or pages == nil then return nil end
+
+	local above = 0
+	while true do
+		local page = pages:GetCurrentPage()
+		above += #page
+		if above >= RANK_SCAN_MAX then return nil end
+		if pages.IsFinished then break end
+
+		local ok = pcall(function() pages:AdvanceToNextPageAsync() end)
+		if not ok then break end
+	end
+	return above + 1
+end
+
+--	计算并写回玩家自己的排名
+function self.RefreshRank(player)
+	local playerData = shared.DataStore.GetData(player)
+	if playerData == nil or playerData.Profile == nil then return end
+
+	local rank = self.GetRank(playerData.Profile.CrystalsTotal or 0)
+	if rank == nil then return end
+
+	playerData.Profile.PVPRank = rank
+	shared.DataStore.SetPlayerData(player, 'Profile')
 end
 
 --	周期性把在线玩家的累计 Crystals 镜像到索引
